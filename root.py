@@ -4,7 +4,8 @@ from tkinter import Label, Menu, messagebox, END
 # https://www.youtube.com/watch?v=XhCfsuMyhXo&list=PLCC34OHNcOtoC6GglhF3ncJ5rLwQrLGnV&index=6
 from tkinter.filedialog import askopenfilename
 
-from audio_live_hearing import AudioLiveHearing
+from capture_sound_fft import CaptureSoundFFT
+from capture_sound_plot import capture_and_display_sound
 from search_cadence import SearchSongFromCadence
 from search_chords import SearchSongFromChords
 
@@ -49,6 +50,7 @@ class RootWindow(tkinter.Tk):
 
         menu_audio = Menu(self.menu_bar, tearoff=0)
         menu_audio.add_command(label="Live hearing", command=self.do_live_hearing)
+        menu_audio.add_command(label="Live analysis", command=self.do_FFT_hearing)
         menu_audio.add_command(label="Sound file loading", command=self.do_something)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
 
@@ -67,10 +69,12 @@ class RootWindow(tkinter.Tk):
         self.menu_bar.add_cascade(label="Help", menu=menu_help)
         self.config(menu=self.menu_bar)
 
+    def do_FFT_hearing(self):
+        c = CaptureSoundFFT()
+        c.capture()
+
     def do_live_hearing(self):
-        if not self.live_hearing:
-            self.live_hearing = AudioLiveHearing()
-        self.live_hearing.display(self)
+        capture_and_display_sound()
 
     def do_about(self):
         messagebox.showinfo("Harmony tools", f"(c) C. Moustier - 2023\nBased on pyHarmonyTooling v.{version('pyHarmonyTooling')} - https://github.com/Moustov/pyharmonytooling")
