@@ -7,6 +7,9 @@ https://matplotlib.org/stable/api/animation_api.html
 import argparse
 import queue
 import sys
+
+from matplotlib import lines
+from pyharmonytools.harmony.note import Note
 from scipy import signal
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
@@ -23,6 +26,7 @@ def int_or_str(text):
 
 
 class CaptureSoundFFT:
+    MAX_AMPLITUDE = 200
     def __init__(self):
         self.parser = None
         self.args = None
@@ -65,7 +69,7 @@ class CaptureSoundFFT:
         self.parser.add_argument(
             '-r', '--samplerate', type=float, help='sampling rate of audio device')
         self.parser.add_argument(
-            '-n', '--downsample', type=int, default=10, metavar='N',
+            '-n', '--downsample', type=int, default=1, metavar='N',
             help='display every Nth sample (default: %(default)s)')
         self.args = self.parser.parse_args(remaining)
         if any(c < 1 for c in self.args.channels):
@@ -87,6 +91,7 @@ class CaptureSoundFFT:
         therefore the queue tends to contain multiple blocks of audio data.
 
         """
+        CALIBRATION_FREQ = 12.97535212
         while True:
             try:
                 recording = self.sound_queue.get_nowait()
@@ -99,20 +104,35 @@ class CaptureSoundFFT:
             yk = np.fft.rfft(ysc)  # real to complex DFT
             k = np.arange(yk.shape[0])
             A = np.abs(yk).max
-            freqs = k / L
-            # print(freqs)
-            # self.fig, self.ax = plt.subplots()
-            # self.init_plotting_canvas()
+            freqs = k / L + CALIBRATION_FREQ
             self.ax.clear()
-            self.ax.set_ylim(-5, 110)
+            self.ax.set_ylim(-5, CaptureSoundFFT.MAX_AMPLITUDE)
             self.ax.plot(freqs, np.abs(yk))
+            min_amp = 10
+            peaks = []
+            max_f = -1
+            for (f, a) in zip(freqs, np.abs(yk)):
+                if a > min_amp * 1.5:
+                    try:
+                        pass
+                        note = Note.get_note_name(f, precision=0.05)
+                        plt.text(f, a + 5, f"{note[0]}{note[1]}")
+                    except ValueError as ve:
+                        print(f"{f} Hz - {a} {str(ve)}")
+        a_freq = 220
+        for octave in range(1, 7):
+            plt.axvline(x=a_freq * 2**octave, color='red', label=f"A{octave}", linestyle=":", lw=0.5)
+
         return []
 
     def init_plotting_canvas(self):
         self.ax.set_xlabel('Frequency in Hertz [Hz]')
+        f = np.arange(CaptureSoundFFT.MAX_AMPLITUDE, 20000)
+        self.ax.semilogx(f)
+        self.ax.grid()
         self.ax.set_ylabel('Frequency Domain (Spectrum) Magnitude')
         self.ax.set_xlim(0.0, self.args.samplerate / 2.0)
-        self.ax.set_ylim(-5, 110)
+        self.ax.set_ylim(-5, CaptureSoundFFT.MAX_AMPLITUDE)
         self.fig.tight_layout(pad=0)
 
     def capture(self):
