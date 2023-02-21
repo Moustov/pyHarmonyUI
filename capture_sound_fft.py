@@ -26,7 +26,12 @@ def int_or_str(text):
 
 
 class CaptureSoundFFT:
-    MAX_AMPLITUDE = 200
+    MAX_AMPLITUDE = 400
+    MIN_FREQ = 20
+    SOUND_LEVEL_MIN = 10
+    CALIBRATION_FREQ = 12.97535212
+    NB_PEAKS = 6
+
     def __init__(self):
         self.parser = None
         self.args = None
@@ -91,7 +96,7 @@ class CaptureSoundFFT:
         therefore the queue tends to contain multiple blocks of audio data.
 
         """
-        CALIBRATION_FREQ = 12.97535212
+
         while True:
             try:
                 recording = self.sound_queue.get_nowait()
@@ -99,37 +104,43 @@ class CaptureSoundFFT:
                 break
             N = recording.shape[0]
             L = N / self.args.samplerate
-            tukey_window = signal.windows.tukey(N, 0.01, True)  # generate the Tukey window, widely open, alpha=0.01
+            # generate the Tukey window, widely open, alpha=0.01
+            # https://www.mathworks.com/help/signal/ref/tukeywin.html
+            tukey_window = signal.windows.tukey(N, 0.01, True)
             ysc = recording[:, 0] * tukey_window  # applying the Tukey window
             yk = np.fft.rfft(ysc)  # real to complex DFT
             k = np.arange(yk.shape[0])
             A = np.abs(yk).max
-            freqs = k / L + CALIBRATION_FREQ
+            freqs = k / L + CaptureSoundFFT.CALIBRATION_FREQ
+
             self.ax.clear()
             self.ax.set_ylim(-5, CaptureSoundFFT.MAX_AMPLITUDE)
-            self.ax.plot(freqs, np.abs(yk))
-            min_amp = 10
-            peaks = []
-            max_f = -1
-            for (f, a) in zip(freqs, np.abs(yk)):
-                if a > min_amp * 1.5:
-                    try:
-                        pass
-                        note = Note.get_note_name(f, precision=0.05)
-                        plt.text(f, a + 5, f"{note[0]}{note[1]}")
-                    except ValueError as ve:
-                        print(f"{f} Hz - {a} {str(ve)}")
-        a_freq = 220
-        for octave in range(1, 7):
-            plt.axvline(x=a_freq * 2**octave, color='red', label=f"A{octave}", linestyle=":", lw=0.5)
+            plt.xscale('log')
+            plt.grid()
 
+            np_abs = np.abs(yk)
+            self.ax.plot(freqs, np_abs)
+            lowest = np.sort(np_abs)
+            peaks = lowest[-CaptureSoundFFT.NB_PEAKS:]
+            for (f, a) in zip(freqs, np_abs):
+                if f > CaptureSoundFFT.MIN_FREQ and a > CaptureSoundFFT.SOUND_LEVEL_MIN and a in peaks:
+                    try:
+                        note = Note.get_note_name(f, precision=0.01)
+                        plt.text(f, a + 5, f"{note[0]}{note[1]}")
+                    except ValueError:
+                        try:
+                            note = Note.get_note_name(f, precision=0.5)
+                            plt.text(f, a + 5, f"~{note[0]}{note[1]}")
+                        except ValueError as ve:
+                            print(f"{f} Hz - {a} {str(ve)}")
+        a_freq = 55/2.0
+        for octave in range(1, 9):
+            plt.axvline(x=a_freq * 2**octave, color='red', label=f"A{octave}", linestyle=":", lw=0.5)
         return []
 
     def init_plotting_canvas(self):
         self.ax.set_xlabel('Frequency in Hertz [Hz]')
         f = np.arange(CaptureSoundFFT.MAX_AMPLITUDE, 20000)
-        self.ax.semilogx(f)
-        self.ax.grid()
         self.ax.set_ylabel('Frequency Domain (Spectrum) Magnitude')
         self.ax.set_xlim(0.0, self.args.samplerate / 2.0)
         self.ax.set_ylim(-5, CaptureSoundFFT.MAX_AMPLITUDE)
@@ -140,7 +151,6 @@ class CaptureSoundFFT:
             if self.args.samplerate is None:
                 device_info = sd.query_devices(self.args.device, 'input')
                 self.args.samplerate = device_info['default_samplerate']
-
             self.length = int(self.args.window * self.args.samplerate / (1000 * self.args.downsample))
             self.plotdata = np.zeros((self.length, len(self.args.channels)))
             self.fig, self.ax = plt.subplots()
@@ -152,7 +162,6 @@ class CaptureSoundFFT:
             ani = FuncAnimation(self.fig, self.update_plotting_canvas,
                                 interval=self.args.interval, blit=True, repeat=False)
             with stream:
-                plt.grid()
                 plt.show()
         except Exception as e:
             self.parser.exit(type(e).__name__ + ': ' + str(e))
