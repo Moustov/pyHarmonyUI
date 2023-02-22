@@ -3,12 +3,13 @@
 
 Matplotlib and NumPy have to be installed.
 https://matplotlib.org/stable/api/animation_api.html
+
+See also https://www.chciken.com/digital/signal/processing/2020/05/13/guitar-tuner.html
 """
 import argparse
 import queue
 import sys
 
-from matplotlib import lines
 from pyharmonytools.harmony.note import Note
 from scipy import signal
 from matplotlib.animation import FuncAnimation
@@ -95,6 +96,43 @@ class CaptureSoundFFT:
         Typically, audio callbacks happen more frequently than plot updates,
         therefore the queue tends to contain multiple blocks of audio data.
 
+        frequencies for calibration
+        Tests with internal microphone
+            100Hz       https://www.youtube.com/watch?v=Cdi0jQtMqV8     KO 130.81Hz found (noisy)
+        C3  130.81Hz    https://www.youtube.com/watch?v=f6GsdpWEHPk     ~OK noisy
+        C#3 138.59Hz    https://www.youtube.com/watch?v=AjTCPI6-60M     KO 164.81Hz found (noisy)
+        D3  146.83Hz    https://www.youtube.com/watch?v=r9Otq6yaxVY     KO 164.81Hz found (noisy)
+        D#3 155.56Hz    https://www.youtube.com/watch?v=-MxqFlfCK6U     KO 164.81Hz found (noisy)
+        E3  164.81Hz    https://www.youtube.com/watch?v=KzWdpvrdI38     ~OK noisy
+        F3  174.61Hz    https://www.youtube.com/watch?v=Qw7xEGAjurg     KO 164-207Hz found (noisy)
+        F#3 185Hz       https://www.youtube.com/watch?v=MzGav1jUrMI     KO 207.65Hz found
+        G3  196Hz       https://www.youtube.com/watch?v=C7vHtc1UCeE     KO 207.65Hz found
+        G#3 207.65Hz    https://www.youtube.com/watch?v=napNiGlpRf0     ~OK noisy
+        A3  220Hz       https://www.youtube.com/watch?v=0XvVS-aoNmc     KO 246.94Hz found
+        A#3 233.08Hz    https://www.youtube.com/watch?v=q_7I6OqMoNc     KO 246.94Hz found
+        B3  246.94Hz    https://www.youtube.com/watch?v=a3SITuEhL9g     ~OK noisy
+        C4  261.63Hz    https://www.youtube.com/watch?v=CKi78RF7vck     KO 277.18Hz found
+        A4  440Hz       https://www.youtube.com/watch?v=0LxtrLizkrU     OK
+        A#4 466.16Hz    https://www.youtube.com/watch?v=WG6Kx1-_qGU     OK
+        B4  493.88Hz    https://www.youtube.com/watch?v=YnVJ5PptX-o     KO 523.25Hz found
+        C4  523.25Hz    https://www.youtube.com/watch?v=Nutnvo5JmoQ     ~OK noisy
+        C#5 554.37Hz    https://www.youtube.com/watch?v=Iqfejgwfx4w     OK
+        D5  587.33Hz    https://www.youtube.com/watch?v=-0Pb3mu9e2c     OK
+        D#5 622.25Hz    https://www.youtube.com/watch?v=0z-Ej6KNYFY     OK
+        E5  659.26Hz    https://www.youtube.com/watch?v=wLdu48B9LqQ     OK
+        F5  698.46Hz    https://www.youtube.com/watch?v=tXOS4lqS3yw     OK
+        F#5 739.99Hz    https://www.youtube.com/watch?v=Xf_ex3jEeW8     OK
+        G5  783.99Hz    https://www.youtube.com/watch?v=yqw7aKG6eIc     OK
+        G#5 830.61Hz    https://www.youtube.com/watch?v=jI7ZludT5I8     OK
+            1500Hz      https://www.youtube.com/watch?v=1iE_Kf3i6Ok     KO 1567.98Hz found (noisy)
+            2500Hz      https://www.youtube.com/watch?v=zrYLB0K5sgo     KO 2489.02Hz found
+            5000Hz      https://www.youtube.com/watch?v=cx1VQISKvhc     KO 4978.03Hz found (noisy)
+            10000Hz     https://www.youtube.com/watch?v=y412fwrht3E     KO 9956.06Hz found (noisy)
+
+        todo see a more accurate tuner here https://www.chciken.com/digital/signal/processing/2020/05/13/guitar-tuner.html
+        this proves the internal mic is good enough => there is *maybe* a problem infered by
+        - the Tukey windowing which is too wide ? (N = kTB)
+        - the sampling rate (eventually infered by the display) ?
         """
 
         while True:
@@ -124,15 +162,9 @@ class CaptureSoundFFT:
             peaks = lowest[-CaptureSoundFFT.NB_PEAKS:]
             for (f, a) in zip(freqs, np_abs):
                 if f > CaptureSoundFFT.MIN_FREQ and a > CaptureSoundFFT.SOUND_LEVEL_MIN and a in peaks:
-                    try:
-                        note = Note.get_note_name(f, precision=0.01)
-                        plt.text(f, a + 5, f"{note[0]}{note[1]}")
-                    except ValueError:
-                        try:
-                            note = Note.get_note_name(f, precision=0.5)
-                            plt.text(f, a + 5, f"~{note[0]}{note[1]}")
-                        except ValueError as ve:
-                            print(f"{f} Hz - {a} {str(ve)}")
+                    note = Note.find_closest_note(f)
+                    plt.text(f, a + 5, f"{note[0]}")
+                    plt.text(f, a - 5, f"{round(note[1],2)}")
         a_freq = 55/2.0
         for octave in range(1, 9):
             plt.axvline(x=a_freq * 2**octave, color='red', label=f"A{octave}", linestyle=":", lw=0.5)
@@ -151,7 +183,7 @@ class CaptureSoundFFT:
             if self.args.samplerate is None:
                 device_info = sd.query_devices(self.args.device, 'input')
                 self.args.samplerate = device_info['default_samplerate']
-            self.length = int(self.args.window * self.args.samplerate / (1000 * self.args.downsample))
+            self.length = int(self.args.window * self.args.samplerate // (1000 * self.args.downsample))
             self.plotdata = np.zeros((self.length, len(self.args.channels)))
             self.fig, self.ax = plt.subplots()
             self.lines = self.ax.plot(self.plotdata)
