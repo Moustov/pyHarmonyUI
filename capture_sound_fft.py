@@ -9,6 +9,7 @@ See also https://www.chciken.com/digital/signal/processing/2020/05/13/guitar-tun
 import argparse
 import queue
 import sys
+import time
 
 from pyharmonytools.harmony.note import Note
 from scipy import signal

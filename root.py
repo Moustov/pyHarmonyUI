@@ -6,6 +6,7 @@ from tkinter.filedialog import askopenfilename
 
 from capture_sound_fft import CaptureSoundFFT
 from capture_sound_plot import capture_and_display_sound
+from download_mp3_youtube import DownloadMP3Youtube
 from search_cadence import SearchSongFromCadence
 from search_chords import SearchSongFromChords
 
@@ -51,6 +52,7 @@ class RootWindow(tkinter.Tk):
         menu_audio = Menu(self.menu_bar, tearoff=0)
         menu_audio.add_command(label="Live hearing", command=self.do_live_hearing)
         menu_audio.add_command(label="Live analysis", command=self.do_FFT_hearing)
+        menu_audio.add_command(label="Youtube MP3 loading", command=self.do_youtube_mp3_loading)
         menu_audio.add_command(label="Sound file loading", command=self.do_something)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
 
@@ -76,6 +78,10 @@ class RootWindow(tkinter.Tk):
     def do_live_hearing(self):
         capture_and_display_sound()
 
+    def do_youtube_mp3_loading(self):
+        d = DownloadMP3Youtube()
+        d.display(self)
+
     def do_about(self):
         messagebox.showinfo("Harmony tools", f"(c) C. Moustier - 2023\nBased on pyHarmonyTooling v.{version('pyHarmonyTooling')} - https://github.com/Moustov/pyharmonytooling")
 
@@ -96,8 +102,6 @@ class RootWindow(tkinter.Tk):
         if not self.search_cadence:
             self.search_cadence = SearchSongFromCadence()
         self.search_cadence.display(self)
-
-
 
 
 if __name__ == "__main__":
