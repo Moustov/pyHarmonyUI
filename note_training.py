@@ -17,49 +17,13 @@ import threading
 import time
 import tkinter
 from datetime import datetime
+from math import floor
 from tkinter import Label, Entry, Button
 from tkinter.ttk import Progressbar
 
 import numpy as np
 import scipy.fftpack
 import sounddevice as sd
-
-
-def time_string(chrono: int):
-    """
-
-    :param chrono: number of ms
-    :return: eg hh:mm:ss.µµµ
-    """
-    h = str(chrono // 1000 // 3600)
-    h = "0" * (2 - len(h)) + h
-    m = str(chrono // 1000 // 3600 % 60)
-    m = "0" * (2 - len(m)) + m
-    s = str(chrono // 1000 % 60)
-    s = "0" * (2 - len(s)) + s
-    ms = str(chrono % 1000)
-    ms = "000" * (2 - len(ms)) + ms
-    return f"{h}:{m}:{s}.{ms}"
-
-
-def score_string(chrono: int, sig_up, sig_down, precision, tempo: int):
-    """
-
-    :param sig_up: time signature - upper figure: nb of sig_down per bar
-    :param sig_down: time signature - lower figure: unit (1, 2, 4, 8, 16)
-    :param tempo: 128 4th per minute
-    :param precision: 1, 2, 4, 8, 16
-    :param chrono: number of ms
-    :return: eg (bar num, 2nd in time, 4th in 2nd, 8th in 4th, 16th in 8th)
-    """
-    bar_duration = tempo / 60
-    bar = chrono // (bar_duration * sig_up)
-    sig_up_number = chrono % bar
-    sig_down_duration = bar_duration // sig_up_number
-    # todo define note tempo according to the precision
-    second_duration = 0
-    note_duration_sig_down = 0
-    return f"bar:{bar} / time:{sig_up_number}"
 
 
 class NoteTraining:
@@ -76,30 +40,31 @@ class NoteTraining:
     SAMPLE_T_LENGTH = 1 / SAMPLE_FREQ  # length between two samples in seconds
     DELTA_FREQ = SAMPLE_FREQ / WINDOW_SIZE  # frequency step width of the interpolated DFT
     OCTAVE_BANDS = [50, 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600]
-    current_note = None
     ALL_NOTES = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"]
 
     def __init__(self):
+        # UI data
         self.progress_bar = None
         self.search_button = None
         self.stop_button = None
-        self.parser = None
-        self.args = None
-        self.plotdata = None
-        self.mapping = None
-        self.sound_queue = None
+        self.ui_root_tk = None
+        self.notes_buttons = {}
+        self.download_thread = None
+        # analyzer data
         self.length = 0
         self.HANN_WINDOW = np.hanning(self.WINDOW_SIZE)
         self.window_samples = [0 for _ in range(self.WINDOW_SIZE)]
         self.noteBuffer = ["1", "2"]
-        self.notes_buttons = {}
+        # song data
         self.song = []
-        self.tempo = 60  # 4th per minute
+        self.sig_up = 4     # 4 fourths in a bar
+        self.sig_down = 4   # dealing with fourths
+        self.tempo = 60     # 4th per minute
         self.chrono = None
         self.start_time = None
-        self.download_thread = None
         self.is_listening = False
-        self.ui_root_tk = None
+        self.current_note = None
+        self.previous_note = None
 
     def display(self, ui_root_tk: tkinter.Tk):
         self.ui_root_tk = ui_root_tk
@@ -136,7 +101,6 @@ class NoteTraining:
         self.progress_bar.stop()
         self.stop_button.grid_remove()
         self.search_button.grid()
-
         self.display_song()
 
     def _listen(self):
@@ -167,7 +131,7 @@ class NoteTraining:
       That's where the magic happens ;)
       """
         if status:
-            print(status)
+            # print("SS", status)
             return
         if any(indata):
             self.window_samples = np.concatenate((self.window_samples, indata[:, 0]))  # append new samples
@@ -234,27 +198,35 @@ class NoteTraining:
                 self._set_current_note(closest_note)
             else:
                 self._unset_current_note()
+                self._set_current_note("-")
         else:
+            self._set_current_note("-")
             print('no input')
 
-    def _set_current_note(self, closest_note: str):
+    def _set_current_note(self, new_note: str):
         """
 
-        :param closest_note: eg "A#2" or "B3"
+        :param new_note: eg "A#2" or "B3"
         :return:
         """
-        # print("set", closest_note)
-        if len(closest_note) in [2, 3]:
+        # print("_set_current_note", new_note)
+        if new_note == "-" or len(new_note) in [2, 3]:
             now = datetime.now()
             self.chrono = (now - self.start_time).microseconds
-            self.add_note(closest_note)
-            self._change_note_bg(closest_note, "#AA8888")
+            self.add_note(new_note)
+            self.previous_note = self.current_note
+            self.current_note = new_note
+            if new_note == "-":
+                self._unset_current_note()
+            else:
+                self._change_note_bg(new_note, "#AA8888")
 
     def _unset_current_note(self):
         # print("unset", self.current_note)
         if self.current_note and len(self.current_note) in [2, 3]:
             self._change_note_bg(self.current_note, "#AAAAAA")
-            self.current_note = None
+            self.previous_note = self.current_note
+            self.current_note = "-"
 
     def _change_note_bg(self, note: str, bg: str):
         """
@@ -263,7 +235,7 @@ class NoteTraining:
         :param bg:  eg "#112233"
         :return:
         """
-        # print("Changed Note:", note, bg)
+        # print("Changed Note:", note, bg, self.current_note)
         if note and len(note) in [2, 3] and bg and len(bg) == 7:
             octave = note[-1]
             the_note = note[0:len(note) - 1]
@@ -272,14 +244,53 @@ class NoteTraining:
                                                                width=5, command=self._do_nothing)
             self.notes_buttons[str(octave)][the_note].grid(row=2 + half_tone, column=octave, padx=5)
 
-    def add_note(self, closest_note):
-        if self.current_note != closest_note:
-            print(self.current_note, closest_note)
-            self.song.append((closest_note, self.chrono))
+    def add_note(self, new_note):
+        if self.previous_note != new_note:
+            now = datetime.now()
+            self.chrono = (now - self.start_time)
+            self.song.append((new_note, self.chrono))
+            print("add_note", self.current_note, (new_note, self.chrono))
 
     def display_song(self):
         for note in self.song:
-            print(time_string(note[1]), ":", note[0])
+            print(note[1], ":", note[0])
+
+    def time_string(self, chrono: int):
+        """
+
+        :param chrono: number of ms
+        :return: eg hh:mm:ss.µµµ
+        """
+        h_n = chrono // (1000 * 3600)
+        h = str(floor(h_n))
+        h = "0" * (2 - len(h)) + h
+        m = str(chrono // (1000 * 60) % 60)
+        m = "0" * (2 - len(m)) + m
+        s = str(chrono // 1000 % 60)
+        s = "0" * (2 - len(s)) + s
+        ms = str(chrono % 1000)
+        ms = "0" * (3 - len(ms)) + ms
+        res = f"{h}:{m}:{s}.{ms}"
+        return res
+
+    def score_string(self, chrono: int, sig_up, sig_down, precision, tempo: int):
+        """
+
+        :param sig_up: time signature - upper figure: nb of sig_down per bar
+        :param sig_down: time signature - lower figure: unit (1, 2, 4, 8, 16)
+        :param tempo: 128 4th per minute
+        :param precision: 1, 2, 4, 8, 16
+        :param chrono: number of ms
+        :return: eg (bar num, 2nd in time, 4th in 2nd, 8th in 4th, 16th in 8th)
+        """
+        bar_duration = tempo / 60
+        bar = chrono // (bar_duration * sig_up)
+        sig_up_number = chrono % bar
+        sig_down_duration = bar_duration // sig_up_number
+        # todo define note tempo according to the precision
+        second_duration = 0
+        note_duration_sig_down = 0
+        return f"bar:{bar} / time:{sig_up_number}"
 
 
 if __name__ == "__main__":

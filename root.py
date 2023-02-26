@@ -1,12 +1,13 @@
 import tkinter
 from importlib.metadata import version
-from tkinter import Label, Menu, messagebox, END
+from tkinter import Label, Menu, messagebox, END, Frame
 # https://www.youtube.com/watch?v=XhCfsuMyhXo&list=PLCC34OHNcOtoC6GglhF3ncJ5rLwQrLGnV&index=6
 from tkinter.filedialog import askopenfilename
 
 from capture_sound_fft import CaptureSoundFFT
 from capture_sound_plot import capture_and_display_sound
 from download_mp3_youtube import DownloadMP3Youtube
+from note_training import NoteTraining
 from search_cadence import SearchSongFromCadence
 from search_chords import SearchSongFromChords
 
@@ -54,6 +55,7 @@ class RootWindow(tkinter.Tk):
         menu_audio.add_command(label="Live analysis", command=self.do_FFT_hearing)
         menu_audio.add_command(label="Youtube MP3 loading", command=self.do_youtube_mp3_loading)
         menu_audio.add_command(label="Sound file loading", command=self.do_something)
+        menu_audio.add_command(label="Note Training", command=self.do_note_training)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
 
         menu_search = Menu(self.menu_bar, tearoff=0)
@@ -71,6 +73,12 @@ class RootWindow(tkinter.Tk):
         self.menu_bar.add_cascade(label="Help", menu=menu_help)
         self.config(menu=self.menu_bar)
 
+    def do_note_training(self):
+        nt = NoteTraining()
+        f = Frame()
+        f.pack()
+        nt.display(f)
+
     def do_FFT_hearing(self):
         c = CaptureSoundFFT()
         c.capture()
@@ -80,7 +88,9 @@ class RootWindow(tkinter.Tk):
 
     def do_youtube_mp3_loading(self):
         d = DownloadMP3Youtube()
-        d.display(self)
+        f = Frame()
+        f.pack()
+        d.display(f)
 
     def do_about(self):
         messagebox.showinfo("Harmony tools", f"(c) C. Moustier - 2023\nBased on pyHarmonyTooling v.{version('pyHarmonyTooling')} - https://github.com/Moustov/pyharmonytooling")
@@ -94,14 +104,18 @@ class RootWindow(tkinter.Tk):
         print("Menu clicked")
 
     def do_search_chords(self):
+        f = Frame()
+        f.pack()
         if not self.search_chords:
             self.search_chords = SearchSongFromChords()
-        self.search_chords.display(self)
+        self.search_chords.display(f)
 
     def do_search_cadence(self):
+        f = Frame()
+        f.pack()
         if not self.search_cadence:
             self.search_cadence = SearchSongFromCadence()
-        self.search_cadence.display(self)
+        self.search_cadence.display(f)
 
 
 if __name__ == "__main__":
