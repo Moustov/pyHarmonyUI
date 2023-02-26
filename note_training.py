@@ -16,12 +16,50 @@ import os
 import threading
 import time
 import tkinter
+from datetime import datetime
 from tkinter import Label, Entry, Button
 from tkinter.ttk import Progressbar
 
 import numpy as np
 import scipy.fftpack
 import sounddevice as sd
+
+
+def time_string(chrono: int):
+    """
+
+    :param chrono: number of ms
+    :return: eg hh:mm:ss.µµµ
+    """
+    h = str(chrono // 1000 // 3600)
+    h = "0" * (2 - len(h)) + h
+    m = str(chrono // 1000 // 3600 % 60)
+    m = "0" * (2 - len(m)) + m
+    s = str(chrono // 1000 % 60)
+    s = "0" * (2 - len(s)) + s
+    ms = str(chrono % 1000)
+    ms = "000" * (2 - len(ms)) + ms
+    return f"{h}:{m}:{s}.{ms}"
+
+
+def score_string(chrono: int, sig_up, sig_down, precision, tempo: int):
+    """
+
+    :param sig_up: time signature - upper figure: nb of sig_down per bar
+    :param sig_down: time signature - lower figure: unit (1, 2, 4, 8, 16)
+    :param tempo: 128 4th per minute
+    :param precision: 1, 2, 4, 8, 16
+    :param chrono: number of ms
+    :return: eg (bar num, 2nd in time, 4th in 2nd, 8th in 4th, 16th in 8th)
+    """
+    bar_duration = tempo / 60
+    bar = chrono // (bar_duration * sig_up)
+    sig_up_number = chrono % bar
+    sig_down_duration = bar_duration // sig_up_number
+    # todo define note tempo according to the precision
+    second_duration = 0
+    note_duration_sig_down = 0
+    return f"bar:{bar} / time:{sig_up_number}"
 
 
 class NoteTraining:
@@ -38,43 +76,76 @@ class NoteTraining:
     SAMPLE_T_LENGTH = 1 / SAMPLE_FREQ  # length between two samples in seconds
     DELTA_FREQ = SAMPLE_FREQ / WINDOW_SIZE  # frequency step width of the interpolated DFT
     OCTAVE_BANDS = [50, 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600]
-    note_found = None
+    current_note = None
     ALL_NOTES = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"]
 
     def __init__(self):
+        self.progress_bar = None
+        self.search_button = None
+        self.stop_button = None
         self.parser = None
         self.args = None
         self.plotdata = None
         self.mapping = None
         self.sound_queue = None
-        self.fig = None
-        self.ax = None
-        self.lines = None
         self.length = 0
         self.HANN_WINDOW = np.hanning(self.WINDOW_SIZE)
         self.window_samples = [0 for _ in range(self.WINDOW_SIZE)]
         self.noteBuffer = ["1", "2"]
+        self.notes_buttons = {}
+        self.song = []
+        self.tempo = 60  # 4th per minute
+        self.chrono = None
+        self.start_time = None
+        self.download_thread = None
+        self.is_listening = False
+        self.ui_root_tk = None
 
-    def display(self, root: tkinter.Tk):
-        self.pattern_label = Label(root, text="Cadence to search")
-        self.pattern_label.pack()
-        self.pattern = Entry(root)
-        self.pattern.pack()
-        self.search_button = Button(root, text='Search', command=self._do_start_hearing)
-        self.search_button.pack()
+    def display(self, ui_root_tk: tkinter.Tk):
+        self.ui_root_tk = ui_root_tk
+        self.search_button = Button(ui_root_tk, text='Listen', command=self._do_start_hearing)
+        self.search_button.grid(row=0, column=4, columnspan=2)
+        self.stop_button = Button(self.ui_root_tk, text='Stop', command=self._do_stop_hearing)
+        self.stop_button.grid(row=0, column=4, columnspan=2)
+        self.stop_button.grid_remove()
 
-        self.progress_bar = Progressbar(root, orient='horizontal', mode='indeterminate', length=280)
-        self.progress_bar.pack()
+        self.progress_bar = Progressbar(ui_root_tk, orient='horizontal', mode='indeterminate', length=280)
+        self.progress_bar.grid(row=1, column=0, columnspan=9)
+        for octave in range(0, len(self.OCTAVE_BANDS)):
+            self.notes_buttons[str(octave)] = {}
+            half_tone = 0
+            for note in self.ALL_NOTES:
+                half_tone += 1
+                self.notes_buttons[str(octave)][note] = Button(ui_root_tk, text=f"{note}{octave}", bg="#AAAAAA",
+                                                               width=5, command=self._do_nothing)
+                self.notes_buttons[str(octave)][note].grid(row=2 + half_tone, column=octave, padx=5)
+
+    def _do_nothing(self):
+        pass
 
     def _do_start_hearing(self):
-        download_thread = threading.Thread(target=self._listen, name="_listen")
-        download_thread.start()
+        self.stop_button.grid()
+        self.search_button.grid_remove()
+        self.is_listening = True
+        self.download_thread = threading.Thread(target=self._listen, name="_listen")
+        self.download_thread.start()
+
+    def _do_stop_hearing(self):
+        self.is_listening = False
+        self.download_thread.join()
+        self.progress_bar.stop()
+        self.stop_button.grid_remove()
+        self.search_button.grid()
+
+        self.display_song()
 
     def _listen(self):
+        self.start_time = datetime.now()
         self.progress_bar.start()
-        with sd.InputStream(channels=1, callback=self.callback, blocksize=self.WINDOW_STEP, samplerate=self.SAMPLE_FREQ):
-            while True:
-                time.sleep(0.5)
+        with sd.InputStream(channels=1, callback=self.callback, blocksize=self.WINDOW_STEP,
+                            samplerate=self.SAMPLE_FREQ):
+            while self.is_listening:
+                time.sleep(0.05)
 
     def find_closest_note(self, pitch):
         """
@@ -106,7 +177,7 @@ class NoteTraining:
             signal_power = (np.linalg.norm(self.window_samples, ord=2) ** 2) / len(self.window_samples)
             if signal_power < self.POWER_THRESH:
                 os.system('cls' if os.name == 'nt' else 'clear')
-                print("Closest note: ...")
+                # print("Closest note: ...")
                 return
 
             # avoid spectral leakage by multiplying the signal with a hann window
@@ -124,13 +195,15 @@ class NoteTraining:
                 ind_end = int(self.OCTAVE_BANDS[j + 1] / self.DELTA_FREQ)
                 ind_end = ind_end if len(magnitude_spec) > ind_end else len(magnitude_spec)
                 avg_energy_per_freq = (np.linalg.norm(magnitude_spec[ind_start:ind_end], ord=2) ** 2) / (
-                            ind_end - ind_start)
+                        ind_end - ind_start)
                 avg_energy_per_freq = avg_energy_per_freq ** 0.5
                 for i in range(ind_start, ind_end):
-                    magnitude_spec[i] = magnitude_spec[i] if magnitude_spec[i] > self.WHITE_NOISE_THRESH * avg_energy_per_freq else 0
+                    magnitude_spec[i] = magnitude_spec[i] if magnitude_spec[
+                                                                 i] > self.WHITE_NOISE_THRESH * avg_energy_per_freq else 0
 
             # interpolate spectrum
-            mag_spec_ipol = np.interp(np.arange(0, len(magnitude_spec), 1 / self.NUM_HPS), np.arange(0, len(magnitude_spec)),
+            mag_spec_ipol = np.interp(np.arange(0, len(magnitude_spec), 1 / self.NUM_HPS),
+                                      np.arange(0, len(magnitude_spec)),
                                       magnitude_spec)
             mag_spec_ipol = mag_spec_ipol / np.linalg.norm(mag_spec_ipol, ord=2)  # normalize it
 
@@ -138,7 +211,8 @@ class NoteTraining:
 
             # calculate the HPS
             for i in range(self.NUM_HPS):
-                tmp_hps_spec = np.multiply(hps_spec[:int(np.ceil(len(mag_spec_ipol) / (i + 1)))], mag_spec_ipol[::(i + 1)])
+                tmp_hps_spec = np.multiply(hps_spec[:int(np.ceil(len(mag_spec_ipol) / (i + 1)))],
+                                           mag_spec_ipol[::(i + 1)])
                 if not any(tmp_hps_spec):
                     break
                 hps_spec = tmp_hps_spec
@@ -153,14 +227,59 @@ class NoteTraining:
             self.noteBuffer.insert(0, closest_note)  # note that this is a ringbuffer
             self.noteBuffer.pop()
 
-            os.system('cls' if os.name == 'nt' else 'clear')
+            # os.system('cls' if os.name == 'nt' else 'clear')
             if self.noteBuffer.count(self.noteBuffer[0]) == len(self.noteBuffer):
-                print(f"Closest note: {closest_note} {max_freq}/{closest_pitch}")
-                self.note_found = closest_note
+                # print(f" - Closest note: {closest_note} {max_freq}/{closest_pitch}")
+                self._unset_current_note()
+                self._set_current_note(closest_note)
             else:
-                self.note_found = None
+                self._unset_current_note()
         else:
             print('no input')
+
+    def _set_current_note(self, closest_note: str):
+        """
+
+        :param closest_note: eg "A#2" or "B3"
+        :return:
+        """
+        # print("set", closest_note)
+        if len(closest_note) in [2, 3]:
+            now = datetime.now()
+            self.chrono = (now - self.start_time).microseconds
+            self.add_note(closest_note)
+            self._change_note_bg(closest_note, "#AA8888")
+
+    def _unset_current_note(self):
+        # print("unset", self.current_note)
+        if self.current_note and len(self.current_note) in [2, 3]:
+            self._change_note_bg(self.current_note, "#AAAAAA")
+            self.current_note = None
+
+    def _change_note_bg(self, note: str, bg: str):
+        """
+
+        :param note: eg "A#2" or "B3"
+        :param bg:  eg "#112233"
+        :return:
+        """
+        # print("Changed Note:", note, bg)
+        if note and len(note) in [2, 3] and bg and len(bg) == 7:
+            octave = note[-1]
+            the_note = note[0:len(note) - 1]
+            half_tone = self.ALL_NOTES.index(the_note) + 1
+            self.notes_buttons[str(octave)][the_note] = Button(self.ui_root_tk, text=f"{the_note}{octave}", bg=bg,
+                                                               width=5, command=self._do_nothing)
+            self.notes_buttons[str(octave)][the_note].grid(row=2 + half_tone, column=octave, padx=5)
+
+    def add_note(self, closest_note):
+        if self.current_note != closest_note:
+            print(self.current_note, closest_note)
+            self.song.append((closest_note, self.chrono))
+
+    def display_song(self):
+        for note in self.song:
+            print(time_string(note[1]), ":", note[0])
 
 
 if __name__ == "__main__":
