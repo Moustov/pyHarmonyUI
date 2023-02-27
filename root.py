@@ -7,6 +7,7 @@ from tkinter.filedialog import askopenfilename
 from capture_sound_fft import CaptureSoundFFT
 from capture_sound_plot import capture_and_display_sound
 from download_mp3_youtube import DownloadMP3Youtube
+from guitar_training import GuitarTraining
 from note_training import NoteTraining
 from search_cadence import SearchSongFromCadence
 from search_chords import SearchSongFromChords
@@ -56,6 +57,7 @@ class RootWindow(tkinter.Tk):
         menu_audio.add_command(label="Youtube MP3 loading", command=self.do_youtube_mp3_loading)
         menu_audio.add_command(label="Sound file loading", command=self.do_something)
         menu_audio.add_command(label="Note Training", command=self.do_note_training)
+        menu_audio.add_command(label="Guitar Training", command=self.do_guitar_training)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
 
         menu_search = Menu(self.menu_bar, tearoff=0)
@@ -78,6 +80,12 @@ class RootWindow(tkinter.Tk):
         f = Frame()
         f.pack()
         nt.display(f)
+
+    def do_guitar_training(self):
+        gt = GuitarTraining()
+        f = Frame()
+        f.pack()
+        gt.display(f)
 
     def do_FFT_hearing(self):
         c = CaptureSoundFFT()
