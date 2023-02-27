@@ -63,6 +63,7 @@ class GuitarTraining:
         self.margin_S = 10
         self.margin_E = 10
         self.margin_W = 20
+        self.fingerings_tk_id = []
 
     def display(self, ui_root_tk: tkinter.Tk):
         self.ui_root_tk = ui_root_tk
@@ -131,32 +132,20 @@ class GuitarTraining:
             self.chrono = (now - self.start_time).microseconds
             self.add_note(new_note)
             self.previous_note = self.current_note
+            self._unset_current_note()
             self.current_note = new_note
-            if new_note == "-":
-                self._unset_current_note()
-            else:
-                self._change_note_bg(new_note, "#AA8888")
+            if new_note != "-":
+                self.draw_note(new_note)
 
     def _unset_current_note(self):
-        # print("unset", self.current_note)
+        print("unset", self.current_note)
         if self.current_note and len(self.current_note) in [2, 3]:
-            self._change_note_bg(self.current_note, "#AAAAAA")
+            raw_note = self.current_note[0:len(self.current_note) - 1]
+            notes_id = self.fretboard.find_withtag(raw_note)
+            for n_id in notes_id:
+                self.fretboard.itemconfigure(n_id, state='hidden')  # 'normal'
             self.previous_note = self.current_note
             self.current_note = "-"
-
-    def _change_note_bg(self, note: str, bg: str):
-        """
-
-        :param note: eg "A#2" or "B3"
-        :param bg:  eg "#112233"
-        :return:
-        """
-        # print("Changed Note:", note, bg, self.current_note)
-        if note and len(note) in [2, 3] and bg and len(bg) == 7:
-            octave = note[-1]
-            the_note = note[0:len(note) - 1]
-            half_tone = self.mic_analyzer.ALL_NOTES.index(the_note) + 1
-            self.draw_note(the_note)
 
     def add_note(self, new_note):
         if self.previous_note != new_note:
@@ -171,9 +160,11 @@ class GuitarTraining:
 
     def draw_note(self, note: str):
         print("draw note", note)
-        pos = self.guitar_neck.find_positions_from_note(note)
+        raw_note = note[0:len(note) - 1]
+        print("raw_note", raw_note)
+        pos = self.guitar_neck.find_positions_from_note(raw_note)
         for p in pos:
-            self.draw_finger_on_neck(note, p[0], p[1])
+            self.draw_finger_on_neck(raw_note, p[0], p[1])
 
     def draw_finger_on_neck(self, note: str, the_string: str, the_fret: int):
         """
@@ -191,8 +182,21 @@ class GuitarTraining:
         se_x = nw_x + width
         se_y = nw_y + width
         note_color = self.note_colors[note]
-        self.fretboard.create_oval(nw_x, nw_y, se_x, se_y, fill=note_color, outline="#DDD", width=1)
-        self.fretboard.create_text(nw_x + width/2, nw_y + width/2, text=note, font=font, anchor=CENTER, fill="#222222")
+        notes_id = self.fretboard.find_withtag(self.current_note)
+        found = False
+        for c in self.fingerings_tk_id:
+            if c[0] in notes_id:
+                self.fretboard.itemconfigure(id, state='normal')
+                found = True
+        if not found:
+            oval_id = self.fretboard.create_oval(nw_x, nw_y, se_x, se_y, fill=note_color,
+                                                 outline=note_color, width=1, tags=note)
+            text_id = self.fretboard.create_text(nw_x + width / 2, nw_y + width / 2, text=note, font=font,
+                                                 anchor=CENTER, fill="#222222", tags=note)
+            self.fingerings_tk_id.append((oval_id, text_id))
+        # notes_id = self.fretboard.find_withtag(self.current_note)
+        # for id in notes_id:
+        #     self.fretboard.itemconfigure(id, state='hidden')  # 'normal'
 
     def draw_fretboard(self):
         self.fretboard.delete("all")
