@@ -72,9 +72,9 @@ class GuitarTraining(MicListener):
 
     def display(self, ui_root_tk: tkinter.Tk):
         self.ui_root_tk = ui_root_tk
-        self.start_button = Button(ui_root_tk, text='Listen', command=self._do_start_hearing)
+        self.start_button = Button(ui_root_tk, text='Start listening', command=self._do_start_hearing)
         self.start_button.grid(row=0, column=0)
-        self.stop_button = Button(self.ui_root_tk, text='Stop', command=self._do_stop_hearing)
+        self.stop_button = Button(self.ui_root_tk, text='Stop listening', command=self._do_stop_hearing)
         self.stop_button.grid(row=0, column=0)
         self.stop_button.grid_remove()
 
