@@ -28,9 +28,15 @@ MicListener <|--NoteTraining
 @enduml
 
 ### NoteRecorder (to be implemented)
-_To be developed_
+Records a sequence of notes with a persistence mechanism
 
-Records a sequence of notes with a persistance mechanism
+@startuml
+NoteRecorder *--GuitarTraining
+NoteRecorder *--NoteTraining
+@enduml
+
+### NotePlayer (to be implemented)
+Plays a note
 
 @startuml
 NoteRecorder *--GuitarTraining

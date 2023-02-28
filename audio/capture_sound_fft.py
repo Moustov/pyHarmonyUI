@@ -5,6 +5,8 @@ Matplotlib and NumPy have to be installed.
 https://matplotlib.org/stable/api/animation_api.html
 
 See also https://www.chciken.com/digital/signal/processing/2020/05/13/guitar-tuner.html
+See also https://github.com/jeffheaton/present/blob/master/youtube/video/fft-frequency.ipynb
+        + https://www.youtube.com/watch?v=rj9NOiFLxWA
 """
 import argparse
 import queue

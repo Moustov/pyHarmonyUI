@@ -22,6 +22,8 @@ from pyharmonytools.harmony.note import Note
 
 from audio.mic_analyzer import MicListener, MicAnalyzer
 
+# handling click on note : https://www.hashbangcode.com/article/using-events-tkinter-canvas-elements-python
+
 
 class GuitarTraining(MicListener):
     # https://en.wikipedia.org/wiki/Chromesthesia
@@ -81,7 +83,7 @@ class GuitarTraining(MicListener):
         self.progress_bar = Progressbar(ui_root_tk, orient='horizontal', mode='indeterminate', length=280)
         self.progress_bar.grid(row=1, column=0)
         self.fretboard = Canvas(ui_root_tk, width=self.fretboard_width, height=self.fretboard_height,
-                                borderwidth=1, background='gray')
+                                borderwidth=1, background='white')
         self.fretboard.grid(row=2, column=0)
         self.draw_fretboard()
         self.initialize_fingers()
@@ -215,9 +217,10 @@ class GuitarTraining(MicListener):
                                            self.margin_N + (self.MAX_STRING - 1) * self.string_interval_size,
                                            fill="lightgray", width=1)
         # nut
-        self.fretboard.create_line(self.margin_W, self.margin_N,
-                                   self.margin_W, self.margin_N + (self.MAX_STRING - 1) * self.string_interval_size,
+        self.fretboard.create_line(self.margin_W + 10, self.margin_N,
+                                   self.margin_W + 10, self.margin_N + (self.MAX_STRING - 1) * self.string_interval_size,
                                    fill="lightgray", width=5)
+        # string names
         string_id = 5
         font = ('Helvetica', 12)
         for s in self.guitar_neck.TUNING:

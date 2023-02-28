@@ -13,15 +13,20 @@ https://matplotlib.org/stable/api/animation_api.html
 """
 import tkinter
 from datetime import datetime
+from functools import partial
 from math import floor
 from tkinter import Button
 from tkinter.ttk import Progressbar
+import numpy as np
+import pygame
 
 from audio.mic_analyzer import MicAnalyzer
+from audio.note_player import NotePlayer
 
 
 class NoteTraining:
     def __init__(self):
+        pygame.init()
         self.mic_analyzer = MicAnalyzer()
         self.mic_analyzer.add_listener(self)
         # UI data
@@ -41,6 +46,7 @@ class NoteTraining:
         self.is_listening = False
         self.current_note = None
         self.previous_note = None
+        self.note_player = NotePlayer()
 
     def display(self, ui_root_tk: tkinter.Tk):
         self.ui_root_tk = ui_root_tk
@@ -58,11 +64,14 @@ class NoteTraining:
             for note in self.mic_analyzer.ALL_NOTES:
                 half_tone += 1
                 self.notes_buttons[str(octave)][note] = Button(ui_root_tk, text=f"{note}{octave}", bg="#AAAAAA",
-                                                               width=10, command=self._do_nothing)
+                                                               width=10, command=partial(self._do_play_note, note,
+                                                                                         octave))
                 self.notes_buttons[str(octave)][note].grid(row=2 + half_tone, column=octave, padx=5)
 
-    def _do_nothing(self):
-        pass
+    def _do_play_note(self, note, octave):
+        print(note, octave)
+        c2 = pygame.mixer.Sound(self.note_player.waves[note][octave].astype(np.int16))
+        pygame.mixer.Sound.play(c2, loops=100, maxtime=1000, fade_ms=200)
 
     def _do_start_hearing(self):
         self.stop_button.grid()
@@ -125,6 +134,7 @@ class NoteTraining:
                 self.notes_buttons[str(octave)][the_note].configure(bg=bg)
             else:
                 btn_text = f"{the_note}{octave} ({round(accuracy, 2)}%)"
+                print(btn_text)
                 self.notes_buttons[str(octave)][the_note].configure(bg=bg, text=btn_text)
 
     def add_note(self, new_note):
