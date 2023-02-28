@@ -2,7 +2,7 @@ PyHarmonyUI
 ================
 
 <div align="center">
-<img src="circle_of_5th.png" width="300" alt="Circle of 5th">
+<img src="screensample1.png" width="300" alt="Screen Sample #1">
 </div>
 
 # OVERVIEW
