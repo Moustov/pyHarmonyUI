@@ -11,21 +11,13 @@ https://matplotlib.org/stable/api/animation_api.html
     See also https://www.chciken.com/digital/signal/processing/2020/05/13/guitar-tuner.html
     '''
 """
-import copy
-import os
-import threading
-import time
 import tkinter
 from datetime import datetime
 from math import floor
-from tkinter import Label, Entry, Button
+from tkinter import Button
 from tkinter.ttk import Progressbar
 
-import numpy as np
-import scipy.fftpack
-import sounddevice as sd
-
-from mic_analyzer import MicAnalyzer
+from audio.mic_analyzer import MicAnalyzer
 
 
 class NoteTraining:
@@ -66,7 +58,7 @@ class NoteTraining:
             for note in self.mic_analyzer.ALL_NOTES:
                 half_tone += 1
                 self.notes_buttons[str(octave)][note] = Button(ui_root_tk, text=f"{note}{octave}", bg="#AAAAAA",
-                                                               width=5, command=self._do_nothing)
+                                                               width=10, command=self._do_nothing)
                 self.notes_buttons[str(octave)][note].grid(row=2 + half_tone, column=octave, padx=5)
 
     def _do_nothing(self):
@@ -89,6 +81,8 @@ class NoteTraining:
     def set_current_note(self, new_note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
         """
 
+        :param closest_pitch:
+        :param heard_freq:
         :param new_note: eg "A#2" or "B3"
         :return:
         """
@@ -98,22 +92,25 @@ class NoteTraining:
             self.chrono = (now - self.start_time).microseconds
             self.add_note(new_note)
             self.previous_note = self.current_note
+            self.unset_current_note()
             self.current_note = new_note
             if new_note == "-":
-                self._unset_current_note()
+                self.unset_current_note()
             else:
-                self._change_note_bg(new_note, "#AA8888")
+                accuracy = 100 - 100*abs((closest_pitch - heard_freq) / closest_pitch)
+                self._change_note_aspects(new_note, "#AA8888", accuracy)
 
-    def _unset_current_note(self):
+    def unset_current_note(self):
         # print("unset", self.current_note)
         if self.current_note and len(self.current_note) in [2, 3]:
-            self._change_note_bg(self.current_note, "#AAAAAA")
+            self._change_note_aspects(self.current_note, "#AAAAAA")
             self.previous_note = self.current_note
             self.current_note = "-"
 
-    def _change_note_bg(self, note: str, bg: str):
+    def _change_note_aspects(self, note: str, bg: str, accuracy: float = -1):
         """
 
+        :param accuracy: percentage of accuracy with perfect pitch
         :param note: eg "A#2" or "B3"
         :param bg:  eg "#112233"
         :return:
@@ -123,9 +120,12 @@ class NoteTraining:
             octave = note[-1]
             the_note = note[0:len(note) - 1]
             half_tone = self.mic_analyzer.ALL_NOTES.index(the_note) + 1
-            self.notes_buttons[str(octave)][the_note] = Button(self.ui_root_tk, text=f"{the_note}{octave}", bg=bg,
-                                                               width=5, command=self._do_nothing)
-            self.notes_buttons[str(octave)][the_note].grid(row=2 + half_tone, column=octave, padx=5)
+            btn_text = f"{the_note}{octave}"
+            if accuracy == -1:
+                self.notes_buttons[str(octave)][the_note].configure(bg=bg)
+            else:
+                btn_text = f"{the_note}{octave} ({round(accuracy, 2)}%)"
+                self.notes_buttons[str(octave)][the_note].configure(bg=bg, text=btn_text)
 
     def add_note(self, new_note):
         if self.previous_note != new_note:

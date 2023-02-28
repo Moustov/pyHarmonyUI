@@ -20,7 +20,7 @@ from tkinter.ttk import Progressbar
 from pyharmonytools.guitar.guitar_neck.neck import Neck
 from pyharmonytools.harmony.note import Note
 
-from mic_analyzer import MicAnalyzer, MicListener
+from audio.mic_analyzer import MicListener, MicAnalyzer
 
 
 class GuitarTraining(MicListener):

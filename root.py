@@ -1,16 +1,16 @@
 import tkinter
 from importlib.metadata import version
-from tkinter import Label, Menu, messagebox, END, Frame
+from tkinter import Label, Menu, messagebox, Frame
 # https://www.youtube.com/watch?v=XhCfsuMyhXo&list=PLCC34OHNcOtoC6GglhF3ncJ5rLwQrLGnV&index=6
 from tkinter.filedialog import askopenfilename
 
-from capture_sound_fft import CaptureSoundFFT
-from capture_sound_plot import capture_and_display_sound
-from download_mp3_youtube import DownloadMP3Youtube
-from guitar_training import GuitarTraining
-from note_training import NoteTraining
-from search_cadence import SearchSongFromCadence
-from search_chords import SearchSongFromChords
+from audio.capture_sound_fft import CaptureSoundFFT
+from audio.capture_sound_plot import capture_and_display_sound
+from file_capabilities.download_mp3_youtube import DownloadMP3Youtube
+from audio.guitar_training import GuitarTraining
+from audio.note_training import NoteTraining
+from ultimate_guitar.search_cadence import SearchSongFromCadence
+from ultimate_guitar.search_chords import SearchSongFromChords
 
 
 #https://stackoverflow.com/questions/61274017/splitting-windows-using-frames-in-tkinter-and-python
@@ -28,7 +28,7 @@ class RootWindow(tkinter.Tk):
 
     def _set_layout(self):
         self.title('Harmony tools')
-        self.geometry('800x600')
+        self.geometry('1024x768')
         self._add_menu()
         self._add_content()
 
@@ -44,9 +44,8 @@ class RootWindow(tkinter.Tk):
         self.menu_bar = Menu(self)
 
         menu_file = Menu(self.menu_bar, tearoff=0)
-        menu_file.add_command(label="New", command=self.do_something)
-        menu_file.add_command(label="Open", command=self.open_file)
-        menu_file.add_command(label="Save", command=self.do_something)
+        menu_file.add_command(label="Youtube MP3 grabbing", command=self.do_youtube_mp3_grabbing)
+        menu_file.add_command(label="Sound file loading", command=self.do_something)
         menu_file.add_separator()
         menu_file.add_command(label="Exit", command=self.quit)
         self.menu_bar.add_cascade(label="File", menu=menu_file)
@@ -54,8 +53,6 @@ class RootWindow(tkinter.Tk):
         menu_audio = Menu(self.menu_bar, tearoff=0)
         menu_audio.add_command(label="Live hearing", command=self.do_live_hearing)
         menu_audio.add_command(label="Live analysis", command=self.do_FFT_hearing)
-        menu_audio.add_command(label="Youtube MP3 loading", command=self.do_youtube_mp3_loading)
-        menu_audio.add_command(label="Sound file loading", command=self.do_something)
         menu_audio.add_command(label="Note Training", command=self.do_note_training)
         menu_audio.add_command(label="Guitar Training", command=self.do_guitar_training)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
@@ -94,7 +91,7 @@ class RootWindow(tkinter.Tk):
     def do_live_hearing(self):
         capture_and_display_sound()
 
-    def do_youtube_mp3_loading(self):
+    def do_youtube_mp3_grabbing(self):
         d = DownloadMP3Youtube()
         f = Frame()
         f.pack()
@@ -109,7 +106,7 @@ class RootWindow(tkinter.Tk):
         print(file)
 
     def do_something(self):
-        print("Menu clicked")
+        messagebox.showinfo("Harmony tools", f"Not yet implemented :-P")
 
     def do_search_chords(self):
         f = Frame()

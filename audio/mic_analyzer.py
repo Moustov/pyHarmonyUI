@@ -4,12 +4,11 @@
 Matplotlib and NumPy have to be installed.
 https://matplotlib.org/stable/api/animation_api.html
 
-    '''
-    Guitar tuner script based on the Harmonic Product Spectrum (HPS)
-    MIT License
-    Copyright (c) 2021 chciken
-    See also https://www.chciken.com/digital/signal/processing/2020/05/13/guitar-tuner.html
-    '''
+Most of the code on this file has been created by chciken under MIT License
+See https://www.chciken.com/digital/signal/processing/2020/05/13/guitar-tuner.html
+
+Guitar tuner script based on the Harmonic Product Spectrum (HPS)
+Copyright (c) 2021 chciken
 """
 import copy
 import os

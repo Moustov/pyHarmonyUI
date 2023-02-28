@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from note_training import NoteTraining
+from audio.note_training import NoteTraining
 
 
 class TestNoteTraining(TestCase):

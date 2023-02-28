@@ -47,7 +47,7 @@ class DownloadMP3Youtube(tkinter.Tk):
 
         # save the file
         base, ext = os.path.splitext(out_file)
-        new_file = base + '.mp3'
+        new_file = base + '.file_capabilities'
         os.rename(out_file, new_file)
 
         # result of success
