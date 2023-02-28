@@ -41,6 +41,7 @@ class GuitarTraining(MicListener):
         # mic
         self.mic_analyzer = MicAnalyzer()
         self.mic_analyzer.add_listener(self)
+        self.mic_analyzer.debug = False
         self.download_thread = None
         # UI widgets
         self.progress_bar = None
@@ -150,14 +151,14 @@ class GuitarTraining(MicListener):
         :param note_name: with or without octave
         :return:
         """
-        print("reveal" if visible else "hide", note_name)
+        # print("reveal" if visible else "hide", note_name)
         notes_id = self.fretboard.find_withtag(note_name)
-        print(notes_id)
+        # print(notes_id)
         for n_id in notes_id:
             self.fretboard.itemconfigure(n_id, state='normal' if visible else 'hidden')
 
     def unset_current_note(self, all_same_notes: bool = False):
-        print("unset", self.current_note)
+        # print("unset", self.current_note)
         if self.current_note and len(self.current_note) in [2, 3]:
             if all_same_notes:
                 raw_note = self.current_note[0:len(self.current_note) - 1]
@@ -172,18 +173,18 @@ class GuitarTraining(MicListener):
             now = datetime.now()
             self.chrono = (now - self.start_time)
             self.song.append((new_note, self.chrono))
-            print("add_note", self.current_note, (new_note, self.chrono))
+            # print("add_note", self.current_note, (new_note, self.chrono))
 
     def display_song(self):
         for note in self.song:
             print(note[1], ":", note[0])
 
     def draw_note(self, note: str):
-        print("draw note", note)
+        # print("draw note", note)
         raw_note = note[0:len(note) - 1]
         octave = int(note[-1:])
         pos = self.guitar_neck.find_positions_from_note(raw_note, octave)
-        print("all notes", pos)
+        # print("all notes", pos)
         for p in pos:
             self.draw_finger_on_neck(raw_note, p[0], p[1])
 
@@ -195,14 +196,14 @@ class GuitarTraining(MicListener):
         :param the_fret:
         :return:
         """
-        print(note, the_string, the_fret)
+        # print(note, the_string, the_fret)
         self.change_note_visible_status(self.current_note, True)
 
     def draw_fretboard(self):
         self.fretboard.delete("all")
         height = self.fretboard_height
         width = self.fretboard_width
-        print("canvas", height, width)
+        # print("canvas", height, width)
         self.string_interval_size = (height + self.margin_N) / self.MAX_STRING
         for string in range(0, self.MAX_STRING):
             self.fretboard.create_line(self.margin_W, self.margin_N + string * self.string_interval_size,

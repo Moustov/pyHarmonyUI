@@ -49,6 +49,7 @@ class MicAnalyzer:
 
     def __init__(self):
         # analyzer data
+        self.mic_timer = 0.005
         self.length = 0
         self.HANN_WINDOW = np.hanning(self.WINDOW_SIZE)
         self.window_samples = [0 for _ in range(self.WINDOW_SIZE)]
@@ -73,7 +74,7 @@ class MicAnalyzer:
         with sd.InputStream(channels=1, callback=self.callback, blocksize=self.WINDOW_STEP,
                             samplerate=self.SAMPLE_FREQ):
             while self.is_listening:
-                time.sleep(0.05)
+                time.sleep(self.mic_timer)
 
     def find_closest_note(self, pitch):
         """
