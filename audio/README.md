@@ -35,10 +35,22 @@ NoteRecorder *--GuitarTraining
 NoteRecorder *--NoteTraining
 @enduml
 
-### NotePlayer (to be implemented)
+### NotePlayer
 Plays a note
 
 @startuml
 NoteRecorder *--GuitarTraining
 NoteRecorder *--NoteTraining
+@enduml
+
+### LearningEnabled
+Enables a learning scenario with some display
+
+@startuml
+Interface LearningEnabled
+LearningEnabled : set_current_note()
+LearningEnabled : unset_current_note()
+LearningEnabled : do_play_note()
+LearningEnabled *--GuitarTraining
+LearningEnabled *--NoteTraining
 @enduml

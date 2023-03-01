@@ -48,6 +48,8 @@ class MicAnalyzer:
 
     def __init__(self):
         self.debug = False
+        self.is_listening = False
+        self.download_thread = None
         # analyzer data
         self.mic_timer = 0.005
         self.length = 0
@@ -57,8 +59,8 @@ class MicAnalyzer:
         # listeners
         self.listeners = []
 
-    def add_listener(self, l: MicListener):
-        self.listeners.append(l)
+    def add_listener(self, listener: MicListener):
+        self.listeners.append(listener)
 
     def do_start_hearing(self):
         self.is_listening = True

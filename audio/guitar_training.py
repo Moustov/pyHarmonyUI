@@ -8,6 +8,7 @@ from tkinter.ttk import Progressbar
 from pyharmonytools.guitar.guitar_neck.neck import Neck
 from pyharmonytools.harmony.note import Note
 
+from audio.learning_scenario import LearningEnabled
 from audio.mic_analyzer import MicListener, MicAnalyzer
 
 
@@ -15,7 +16,7 @@ from audio.mic_analyzer import MicListener, MicAnalyzer
 from audio.note_player import NotePlayer
 
 
-class GuitarTraining(MicListener):
+class GuitarTraining(MicListener, LearningEnabled):
     # https://en.wikipedia.org/wiki/Chromesthesia
     # Scriabin's sound-to-color circle of fifths
     note_colors = {
@@ -27,6 +28,8 @@ class GuitarTraining(MicListener):
 
     def __init__(self):
         self.debug = True
+        self.learning_programme = None
+        self.learn_button = None
         # guitar
         self.note_player = NotePlayer()
         self.guitar_neck = Neck()
@@ -66,9 +69,9 @@ class GuitarTraining(MicListener):
 
     def display(self, ui_root_tk: tkinter.Tk):
         self.ui_root_tk = ui_root_tk
-        self.start_button = Button(ui_root_tk, text='Start listening', command=self._do_start_hearing)
+        self.start_button = Button(ui_root_tk, text='Start listening', command=self.do_start_hearing)
         self.start_button.grid(row=0, column=0)
-        self.stop_button = Button(self.ui_root_tk, text='Stop listening', command=self._do_stop_hearing)
+        self.stop_button = Button(self.ui_root_tk, text='Stop listening', command=self.do_stop_hearing)
         self.stop_button.grid(row=0, column=0)
         self.stop_button.grid_remove()
 
@@ -79,6 +82,8 @@ class GuitarTraining(MicListener):
         self.fretboard.grid(row=2, column=0)
         self._draw_fretboard()
         self._initialize_fingers()
+        self.learn_button = Button(self.ui_root_tk, text='Start Learning', command=self._do_start_learning)
+        self.learn_button.grid(row=0, column=0, columnspan=1)
 
     def __test_note_display(self):
         self._draw_finger_on_neck("D", the_string='E', the_fret=5)
@@ -108,14 +113,17 @@ class GuitarTraining(MicListener):
     def _do_nothing(self):
         pass
 
-    def _do_play_note(self, note: str, octave: int, event):
+    def _note_clicked(self, note: str, octave: int, event):
+        self.do_play_note(note, octave)
+
+    def do_play_note(self, note: str, octave: int):
         self.note_player.debug = True
         if self.debug:
-            print("_do_play_note:", note, octave, event)
+            print("do_play_note:", note, octave)
         self.note_player.play_note(note, octave)
         self.note_player.debug = False
 
-    def _do_start_hearing(self):
+    def do_start_hearing(self):
         self.mic_analyzer.debug = True
         for n in Note.CHROMATIC_SCALE_SHARP_BASED:
             self.change_note_visible_status(n, False)
@@ -125,7 +133,7 @@ class GuitarTraining(MicListener):
         self.progress_bar.start()
         self.mic_analyzer.do_start_hearing()
 
-    def _do_stop_hearing(self):
+    def do_stop_hearing(self):
         for n in Note.CHROMATIC_SCALE_SHARP_BASED:
             self.change_note_visible_status(n, True)
         self.mic_analyzer.do_stop_hearing()
@@ -150,6 +158,8 @@ class GuitarTraining(MicListener):
             self.current_note = new_note
             if new_note != "-":
                 self._draw_note(new_note)
+        if self.learning_programme:
+            self.learning_programme.set_current_note(new_note, heard_freq, closest_pitch)
 
     def change_note_visible_status(self, note_name, visible: bool):
         """
@@ -252,11 +262,25 @@ class GuitarTraining(MicListener):
                 text_id = self.fretboard.create_text(nw_x + width / 2, nw_y + width / 2, text=raw_note_name, font=font,
                                                      anchor=CENTER, fill="#222222", tags=tags)
                 self.fretboard.tag_bind(oval_id, sequence='<Button-1>',
-                                        func=partial(self._do_play_note, raw_note_name, octave))
+                                        func=partial(self._note_clicked, raw_note_name, octave))
                 self.fretboard.tag_bind(text_id, sequence='<Button-1>',
-                                        func=partial(self._do_play_note, raw_note_name, octave))
+                                        func=partial(self._note_clicked, raw_note_name, octave))
                 self.fingerings_tk_id.append((oval_id, text_id))
                 self.change_note_visible_status(raw_note_name, True)
+
+    def clear_notes(self):
+        for n in Note.CHROMATIC_SCALE_SHARP_BASED:
+            self.change_note_visible_status(n, False)
+
+    def show_note(self, note: str):
+        if self.debug:
+            print("show_note", note)
+        self.change_note_visible_status(note, True)
+
+    def mask_note(self, note: str):
+        if self.debug:
+            print("show_note", note)
+        self.change_note_visible_status(note, False)
 
 
 if __name__ == "__main__":

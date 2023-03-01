@@ -6,13 +6,16 @@ from math import floor
 from tkinter import Button
 from tkinter.ttk import Progressbar
 
+from audio.learning_scenario import LearningEnabled
 from audio.mic_analyzer import MicAnalyzer
 from audio.note_player import NotePlayer
 
 
-class NoteTraining:
+class NoteTraining(LearningEnabled):
     def __init__(self):
         self.debug = False
+        self.learning_programme = None
+        #
         self.mic_analyzer = MicAnalyzer()
         self.mic_analyzer.add_listener(self)
         # UI data
@@ -21,7 +24,7 @@ class NoteTraining:
         self.stop_button = None
         self.ui_root_tk = None
         self.notes_buttons = {}
-        self.download_thread = None
+        self.learning_thread = None
         # song data
         self.song = []
         self.sig_up = 4     # 4 fourths in a bar
@@ -32,13 +35,14 @@ class NoteTraining:
         self.is_listening = False
         self.current_note = None
         self.previous_note = None
+        self.learn_button = None
         self.note_player = NotePlayer()
 
     def display(self, ui_root_tk: tkinter.Tk):
         self.ui_root_tk = ui_root_tk
-        self.search_button = Button(ui_root_tk, text='Listen', command=self._do_start_hearing)
+        self.search_button = Button(ui_root_tk, text='Listen', command=self.do_start_hearing)
         self.search_button.grid(row=0, column=4, columnspan=2)
-        self.stop_button = Button(self.ui_root_tk, text='Stop', command=self._do_stop_hearing)
+        self.stop_button = Button(self.ui_root_tk, text='Stop', command=self.do_stop_hearing)
         self.stop_button.grid(row=0, column=4, columnspan=2)
         self.stop_button.grid_remove()
 
@@ -50,29 +54,41 @@ class NoteTraining:
             for note in self.mic_analyzer.ALL_NOTES:
                 half_tone += 1
                 self.notes_buttons[str(octave)][note] = Button(ui_root_tk, text=f"{note}{octave}", bg="#AAAAAA",
-                                                               width=10, command=partial(self._do_play_note, note,
+                                                               width=10, command=partial(self.do_play_note, note,
                                                                                          octave))
                 self.notes_buttons[str(octave)][note].grid(row=2 + half_tone, column=octave, padx=5)
 
-    def _do_play_note(self, note, octave):
+        self.learn_button = Button(self.ui_root_tk, text='Start Learning', command=self._do_start_learning)
+        self.learn_button.grid(row=0, column=0, columnspan=1)
+
+    def do_play_note(self, note, octave):
         if self.debug:
             print(note, octave)
         self.note_player.play_note(note, octave)
 
-    def _do_start_hearing(self):
-        self.mic_analyzer.debug = True
+    def do_start_hearing(self):
         self.stop_button.grid()
         self.search_button.grid_remove()
         self.start_time = datetime.now()
         self.progress_bar.start()
         self.mic_analyzer.do_start_hearing()
 
-    def _do_stop_hearing(self):
+    def do_stop_hearing(self):
         self.mic_analyzer.do_stop_hearing()
         self.progress_bar.stop()
         self.stop_button.grid_remove()
         self.search_button.grid()
         self.display_song()
+
+    def show_note(self, note: str):
+        if self.debug:
+            print("show_note", note)
+        self._change_note_aspects(note, "#EEEEEE")
+
+    def mask_note(self, note: str):
+        if self.debug:
+            print("show_note", note)
+        self._change_note_aspects(note, "#AAAAAA")
 
     def set_current_note(self, new_note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
         """
@@ -96,6 +112,8 @@ class NoteTraining:
             else:
                 accuracy = 100 - 100*abs((closest_pitch - heard_freq) / closest_pitch)
                 self._change_note_aspects(new_note, "#AA8888", accuracy)
+        if self.learning_programme:
+            self.learning_programme.set_current_note(new_note, heard_freq, closest_pitch)
 
     def unset_current_note(self):
         if self.debug:
