@@ -47,13 +47,14 @@ class MicAnalyzer:
     ALL_NOTES = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"]
 
     def __init__(self):
+        self.debug = False
         # analyzer data
         self.mic_timer = 0.005
         self.length = 0
         self.HANN_WINDOW = np.hanning(self.WINDOW_SIZE)
         self.window_samples = [0 for _ in range(self.WINDOW_SIZE)]
         self.noteBuffer = ["1", "2"]
-        self.debug = True
+        # listeners
         self.listeners = []
 
     def add_listener(self, l: MicListener):
@@ -95,7 +96,8 @@ class MicAnalyzer:
       That's where the magic happens ;)
       """
         if status:
-            # print("SS", status)
+            if self.debug:
+                print("SS", status)
             return
         if any(indata):
             self.window_samples = np.concatenate((self.window_samples, indata[:, 0]))  # append new samples

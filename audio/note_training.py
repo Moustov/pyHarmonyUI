@@ -1,24 +1,10 @@
 #!/usr/bin/env python3
-"""Plot the live microphone signal(s) with matplotlib.
-
-Matplotlib and NumPy have to be installed.
-https://matplotlib.org/stable/api/animation_api.html
-
-    '''
-    Guitar tuner script based on the Harmonic Product Spectrum (HPS)
-    MIT License
-    Copyright (c) 2021 chciken
-    See also https://www.chciken.com/digital/signal/processing/2020/05/13/guitar-tuner.html
-    '''
-"""
 import tkinter
 from datetime import datetime
 from functools import partial
 from math import floor
 from tkinter import Button
 from tkinter.ttk import Progressbar
-import numpy as np
-import pygame
 
 from audio.mic_analyzer import MicAnalyzer
 from audio.note_player import NotePlayer
@@ -26,7 +12,7 @@ from audio.note_player import NotePlayer
 
 class NoteTraining:
     def __init__(self):
-        pygame.init()
+        self.debug = False
         self.mic_analyzer = MicAnalyzer()
         self.mic_analyzer.add_listener(self)
         # UI data
@@ -69,11 +55,12 @@ class NoteTraining:
                 self.notes_buttons[str(octave)][note].grid(row=2 + half_tone, column=octave, padx=5)
 
     def _do_play_note(self, note, octave):
-        print(note, octave)
-        c2 = pygame.mixer.Sound(self.note_player.waves[note][octave].astype(np.int16))
-        pygame.mixer.Sound.play(c2, loops=100, maxtime=1000, fade_ms=200)
+        if self.debug:
+            print(note, octave)
+        self.note_player.play_note(note, octave)
 
     def _do_start_hearing(self):
+        self.mic_analyzer.debug = True
         self.stop_button.grid()
         self.search_button.grid_remove()
         self.start_time = datetime.now()
@@ -95,7 +82,8 @@ class NoteTraining:
         :param new_note: eg "A#2" or "B3"
         :return:
         """
-        # print("_set_current_note", new_note)
+        if self.debug:
+            print("_set_current_note", new_note)
         if new_note == "-" or len(new_note) in [2, 3]:
             now = datetime.now()
             self.chrono = (now - self.start_time).microseconds
@@ -110,7 +98,8 @@ class NoteTraining:
                 self._change_note_aspects(new_note, "#AA8888", accuracy)
 
     def unset_current_note(self):
-        # print("unset", self.current_note)
+        if self.debug:
+            print("unset", self.current_note)
         if self.current_note and len(self.current_note) in [2, 3]:
             self._change_note_aspects(self.current_note, "#AAAAAA")
             self.previous_note = self.current_note
@@ -124,7 +113,8 @@ class NoteTraining:
         :param bg:  eg "#112233"
         :return:
         """
-        # print("Changed Note:", note, bg, self.current_note)
+        if self.debug:
+            print("Changed Note:", note, bg, self.current_note)
         if note and len(note) in [2, 3] and bg and len(bg) == 7:
             octave = note[-1]
             the_note = note[0:len(note) - 1]
