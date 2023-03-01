@@ -44,10 +44,21 @@ class LearningScenario(LearningEnabled):
     def __init__(self, ui: LearningEnabled):
         self.debug = True
         self.ui = ui
-        self.scenario = {
+        sc = {"name": "C scale2", "description": "", "play_notes": "C3-D3-E3-F3-G3-A3-B3-A4-G4-F4-E4-D4-C4",
+              "check condition": 100}
+        self.scenario = sc
+        self.notes_sequence = self.scenario["play_notes"].split("-")
+        self.current_expected_note_step = 0
+
+    def set_scenario(self, scenario: dict):
+        """
+
+        :param scenario: {
             "play_notes": "C3-E3-G3",
             "check condition": 100
         }
+        :return:
+        """
         self.notes_sequence = self.scenario["play_notes"].split("-")
         self.current_expected_note_step = 0
 

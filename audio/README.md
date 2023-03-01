@@ -47,7 +47,7 @@ NoteRecorder *--NoteTraining
 Enables a learning scenario with some display
 
 @startuml
-Interface LearningEnabled
+Abstract LearningEnabled
 LearningEnabled : set_current_note()
 LearningEnabled : unset_current_note()
 LearningEnabled : do_play_note()

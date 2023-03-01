@@ -6,6 +6,7 @@ from tkinter.filedialog import askopenfilename
 
 from audio.capture_sound_fft import CaptureSoundFFT
 from audio.capture_sound_plot import capture_and_display_sound
+from audio.learning_center import LearningCenter
 from file_capabilities.download_mp3_youtube import DownloadMP3Youtube
 from audio.guitar_training import GuitarTraining
 from audio.note_training import NoteTraining
@@ -53,6 +54,8 @@ class RootWindow(tkinter.Tk):
         menu_audio = Menu(self.menu_bar, tearoff=0)
         menu_audio.add_command(label="Live hearing", command=self.do_live_hearing)
         menu_audio.add_command(label="Live analysis", command=self.do_FFT_hearing)
+        menu_audio.add_separator()
+        menu_audio.add_command(label="Learning Center", command=self.do_learning_center)
         menu_audio.add_command(label="Note Training", command=self.do_note_training)
         menu_audio.add_command(label="Guitar Training", command=self.do_guitar_training)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
@@ -71,6 +74,12 @@ class RootWindow(tkinter.Tk):
         menu_help.add_command(label="About", command=self.do_about)
         self.menu_bar.add_cascade(label="Help", menu=menu_help)
         self.config(menu=self.menu_bar)
+
+    def do_learning_center(self):
+        lc = LearningCenter()
+        f = Frame()
+        f.pack()
+        lc.display(f)
 
     def do_note_training(self):
         nt = NoteTraining()

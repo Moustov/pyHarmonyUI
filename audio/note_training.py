@@ -6,6 +6,8 @@ from math import floor
 from tkinter import Button
 from tkinter.ttk import Progressbar
 
+from pyharmonytools.harmony.note import Note
+
 from audio.learning_scenario import LearningEnabled
 from audio.mic_analyzer import MicAnalyzer
 from audio.note_player import NotePlayer
@@ -51,7 +53,7 @@ class NoteTraining(LearningEnabled):
         for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
             self.notes_buttons[str(octave)] = {}
             half_tone = 0
-            for note in self.mic_analyzer.ALL_NOTES:
+            for note in Note.CHROMATIC_SCALE_SHARP_BASED:
                 half_tone += 1
                 self.notes_buttons[str(octave)][note] = Button(ui_root_tk, text=f"{note}{octave}", bg="#AAAAAA",
                                                                width=10, command=partial(self.do_play_note, note,
