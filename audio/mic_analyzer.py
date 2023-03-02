@@ -26,6 +26,9 @@ import sounddevice as sd
 
 
 class MicListener:
+    def __init__(self):
+        pass
+
     def set_current_note(self, new_note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
         pass
 

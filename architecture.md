@@ -13,7 +13,7 @@ participant NoteRecorder #99FF99
 @enduml
 
 ## Components
-### [MicAnalyzer](mic_analyzer.py)
+### [MicAnalyzer](audio/mic_analyzer.py)
 Component which fetches a signal from the mic and send it to all registered listeners
 
 @startuml

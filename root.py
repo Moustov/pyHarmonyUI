@@ -6,10 +6,10 @@ from tkinter.filedialog import askopenfilename
 
 from audio.capture_sound_fft import CaptureSoundFFT
 from audio.capture_sound_plot import capture_and_display_sound
-from audio.learning_center import LearningCenter
+from instrument.guitar_training import GuitarTraining
+from learning.learning_center import LearningCenter
 from file_capabilities.download_mp3_youtube import DownloadMP3Youtube
-from audio.guitar_training import GuitarTraining
-from audio.voice_training import VoiceTraining
+from instrument.voice_training import VoiceTraining
 from ultimate_guitar.search_cadence import SearchSongFromCadence
 from ultimate_guitar.search_chords import SearchSongFromChords
 

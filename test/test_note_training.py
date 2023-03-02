@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from audio.voice_training import VoiceTraining
+from instrument.voice_training import VoiceTraining
 
 
 class TestNoteTraining(TestCase):

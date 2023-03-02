@@ -8,7 +8,7 @@ from tkinter.ttk import Progressbar
 from pyharmonytools.guitar.guitar_neck.neck import Neck
 from pyharmonytools.harmony.note import Note
 
-from audio.learning_scenario import LearningEnabled
+from learning.learning_scenario import PilotableInstrument
 from audio.mic_analyzer import MicListener, MicAnalyzer
 
 
@@ -16,7 +16,7 @@ from audio.mic_analyzer import MicListener, MicAnalyzer
 from audio.note_player import NotePlayer
 
 
-class GuitarTraining(MicListener, LearningEnabled):
+class GuitarTraining(MicListener, PilotableInstrument):
     # https://en.wikipedia.org/wiki/Chromesthesia
     # Scriabin's sound-to-color circle of fifths
     note_colors = {
@@ -27,6 +27,7 @@ class GuitarTraining(MicListener, LearningEnabled):
     }
 
     def __init__(self):
+        super().__init__()
         self.debug = True
         self.learning_programme = None
         self.learn_button = None

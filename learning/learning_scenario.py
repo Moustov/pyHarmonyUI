@@ -5,7 +5,7 @@ from tkinter import messagebox
 from pyharmonytools.harmony.note import Note
 
 
-class LearningEnabled:
+class PilotableInstrument:
     def __init__(self):
         pass
 
@@ -40,16 +40,18 @@ class LearningEnabled:
         pass
 
 
-class LearningScenario(LearningEnabled):
+class LearningScenario(PilotableInstrument):
     def __init__(self):
+        self.pause_between_notes = 1
         self.debug = True
-        self.ui = None
+        self.instrument = None
         self.scenario = None
         self.notes_sequence = None
         self.current_expected_note_step = 0
 
-    def start_learning(self, ui: LearningEnabled, scenario: dict):
-        self.ui = ui
+    def start_learning(self, the_instrument: PilotableInstrument, scenario: dict):
+        self.instrument = the_instrument
+        self.instrument.debug = True
         self.scenario = scenario
         self.notes_sequence = self.scenario["play_notes"].split("-")
         self.current_expected_note_step = 0
@@ -57,11 +59,11 @@ class LearningScenario(LearningEnabled):
             raw_note_name = note[:-1]
             raw_note_name = Note.CHROMATIC_SCALE_SHARP_BASED[Note.CHROMATIC_SCALE_FLAT_BASED.index(raw_note_name)]
             octave = int(note[-1])
-            self.ui.show_note(note)
-            self.ui.do_play_note(raw_note_name, octave)
-            time.sleep(1)
-            self.ui.mask_note(note)
-        self.ui.do_start_hearing()
+            self.instrument.show_note(note)
+            self.instrument.do_play_note(raw_note_name, octave)
+            time.sleep(self.pause_between_notes)
+            self.instrument.mask_note(note)
+        self.instrument.do_start_hearing()
 
     def set_current_note(self, new_note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
         if self.debug:
@@ -71,7 +73,7 @@ class LearningScenario(LearningEnabled):
         if self.debug:
             print("status:", int(100 * self.current_expected_note_step / len(self.notes_sequence)), "%")
         if self.current_expected_note_step == len(self.notes_sequence):
-            self.ui.do_stop_hearing()
+            self.instrument.do_stop_hearing()
             messagebox.showinfo("Harmony tools",
                                 f"You did it!")
 

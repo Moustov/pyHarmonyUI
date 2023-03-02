@@ -8,13 +8,18 @@ from tkinter.ttk import Progressbar
 
 from pyharmonytools.harmony.note import Note
 
-from audio.learning_scenario import LearningEnabled
-from audio.mic_analyzer import MicAnalyzer
+from learning.learning_scenario import PilotableInstrument
+from audio.mic_analyzer import MicAnalyzer, MicListener
 from audio.note_player import NotePlayer
 
 
-class VoiceTraining(LearningEnabled):
+class VoiceTraining(MicListener, PilotableInstrument):
+    NOTE_MUTE = "#AAAAAA"
+    NOTE_HEARD = "#AA8888"
+    NOTE_SHOWN = "#EEEEEE"
+
     def __init__(self):
+        super().__init__()
         self.debug = False
         self.learning_programme = None
         #
@@ -55,7 +60,7 @@ class VoiceTraining(LearningEnabled):
             half_tone = 0
             for note in Note.CHROMATIC_SCALE_SHARP_BASED:
                 half_tone += 1
-                self.notes_buttons[str(octave)][note] = Button(ui_root_tk, text=f"{note}{octave}", bg="#AAAAAA",
+                self.notes_buttons[str(octave)][note] = Button(ui_root_tk, text=f"{note}{octave}", bg=VoiceTraining.NOTE_MUTE,
                                                                width=10, command=partial(self.do_play_note, note,
                                                                                          octave))
                 self.notes_buttons[str(octave)][note].grid(row=2 + half_tone, column=octave, padx=5)
@@ -85,12 +90,12 @@ class VoiceTraining(LearningEnabled):
     def show_note(self, note: str):
         if self.debug:
             print("show_note", note)
-        self._change_note_aspects(note, "#EEEEEE")
+        self._change_note_aspects(note, VoiceTraining.NOTE_SHOWN)
 
     def mask_note(self, note: str):
         if self.debug:
             print("show_note", note)
-        self._change_note_aspects(note, "#AAAAAA")
+        self._change_note_aspects(note, VoiceTraining.NOTE_MUTE)
 
     def set_current_note(self, new_note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
         """
@@ -113,7 +118,7 @@ class VoiceTraining(LearningEnabled):
                 self.unset_current_note()
             else:
                 accuracy = 100 - 100*abs((closest_pitch - heard_freq) / closest_pitch)
-                self._change_note_aspects(new_note, "#AA8888", accuracy)
+                self._change_note_aspects(new_note, VoiceTraining.NOTE_HEARD, accuracy)
         if self.learning_programme:
             self.learning_programme.set_current_note(new_note, heard_freq, closest_pitch)
 
@@ -121,7 +126,7 @@ class VoiceTraining(LearningEnabled):
         if self.debug:
             print("unset", self.current_note)
         if self.current_note and len(self.current_note) in [2, 3]:
-            self._change_note_aspects(self.current_note, "#AAAAAA")
+            self._change_note_aspects(self.current_note, VoiceTraining.NOTE_MUTE)
             self.previous_note = self.current_note
             self.current_note = "-"
 
@@ -158,42 +163,10 @@ class VoiceTraining(LearningEnabled):
         for note in self.song:
             print(note[1], ":", note[0])
 
-    def time_string(self, chrono: int):
-        """
-
-        :param chrono: number of ms
-        :return: eg hh:mm:ss.µµµ
-        """
-        h_n = chrono // (1000 * 3600)
-        h = str(floor(h_n))
-        h = "0" * (2 - len(h)) + h
-        m = str(chrono // (1000 * 60) % 60)
-        m = "0" * (2 - len(m)) + m
-        s = str(chrono // 1000 % 60)
-        s = "0" * (2 - len(s)) + s
-        ms = str(chrono % 1000)
-        ms = "0" * (3 - len(ms)) + ms
-        res = f"{h}:{m}:{s}.{ms}"
-        return res
-
-    def score_string(self, chrono: int, sig_up, sig_down, precision, tempo: int):
-        """
-
-        :param sig_up: time signature - upper figure: nb of sig_down per bar
-        :param sig_down: time signature - lower figure: unit (1, 2, 4, 8, 16)
-        :param tempo: 128 4th per minute
-        :param precision: 1, 2, 4, 8, 16
-        :param chrono: number of ms
-        :return: eg (bar num, 2nd in time, 4th in 2nd, 8th in 4th, 16th in 8th)
-        """
-        bar_duration = tempo / 60
-        bar = chrono // (bar_duration * sig_up)
-        sig_up_number = chrono % bar
-        sig_down_duration = bar_duration // sig_up_number
-        # todo define note tempo according to the precision
-        second_duration = 0
-        note_duration_sig_down = 0
-        return f"bar:{bar} / time:{sig_up_number}"
+    def clear_notes(self):
+        for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
+            for note in Note.CHROMATIC_SCALE_SHARP_BASED:
+                self.notes_buttons[str(octave)][note].configure(bg=VoiceTraining.NOTE_MUTE, text=f"{note}{octave}")
 
 
 if __name__ == "__main__":

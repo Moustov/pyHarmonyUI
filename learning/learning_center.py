@@ -5,9 +5,9 @@ from tkinter import Button, Label, Frame, messagebox
 from tkinter.constants import *
 from tkinter.ttk import Treeview, Combobox
 
-from audio.guitar_training import GuitarTraining
-from audio.learning_scenario import LearningScenario, LearningEnabled
-from audio.voice_training import VoiceTraining
+from instrument.guitar_training import GuitarTraining
+from learning.learning_scenario import LearningScenario
+from instrument.voice_training import VoiceTraining
 
 
 class LearningCenter:
