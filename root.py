@@ -56,8 +56,6 @@ class RootWindow(tkinter.Tk):
         menu_audio.add_command(label="Live analysis", command=self.do_FFT_hearing)
         menu_audio.add_separator()
         menu_audio.add_command(label="Learning Center", command=self.do_learning_center)
-        menu_audio.add_command(label="Voice Training", command=self.do_voice_training)
-        menu_audio.add_command(label="Guitar Training", command=self.do_guitar_training)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
 
         menu_search = Menu(self.menu_bar, tearoff=0)
@@ -80,18 +78,6 @@ class RootWindow(tkinter.Tk):
         f = Frame()
         f.pack()
         lc.display(f)
-
-    def do_voice_training(self):
-        nt = VoiceTraining()
-        f = Frame()
-        f.pack()
-        nt.display(f)
-
-    def do_guitar_training(self):
-        gt = GuitarTraining()
-        f = Frame()
-        f.pack()
-        gt.display(f)
 
     def do_FFT_hearing(self):
         c = CaptureSoundFFT()
