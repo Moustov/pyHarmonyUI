@@ -1,16 +1,19 @@
 import json
 import os
+import time
 import tkinter
 from tkinter import Button, Label, Frame, messagebox
 from tkinter.constants import *
 from tkinter.ttk import Treeview, Combobox
 
+from pyharmonytools.harmony.note import Note
+
 from instrument.guitar_training import GuitarTraining
-from learning.learning_scenario import LearningScenario
 from instrument.voice_training import VoiceTraining
+from learning.learning_scenario import LearningCenterInterface
 
 
-class LearningCenter:
+class LearningCenter(LearningCenterInterface):
     MODULES_PATH = 'learning modules/'
 
     def __init__(self):
@@ -26,6 +29,9 @@ class LearningCenter:
         self.start_button = None
         self.ui_root_tk = None
         self.scenario = None
+        self.pause_between_notes = 1
+        self.notes_sequence = None
+        self.current_expected_note_step = 0
         self.selected_instrument_training = None
 
     def display(self, ui_root_tk: tkinter.Tk):
@@ -67,13 +73,50 @@ class LearningCenter:
         self.learning_scenario_frame = Frame(self.ui_root_tk)
         self.learning_scenario_frame.grid(row=0, column=1, rowspan=5)
         self.selected_instrument_training = VoiceTraining()
+        self.selected_instrument_training.debug = True
         self.selected_instrument_training.display(self.learning_scenario_frame)
+
         # select rapidity & success factors (how hard)
 
     def do_start_exercise(self):
         if self.selected_instrument_training and self.scenario:
-            self.learning_scenario = LearningScenario()
-            self.learning_scenario.start_learning(self.selected_instrument_training, self.scenario)
+            # self.learning_scenario = LearningScenario()
+            # self.learning_scenario.start_learning(self.selected_instrument_training, self.scenario)
+
+            self.selected_instrument_training.debug = True
+            self.notes_sequence = self.scenario["play_notes"].split("-")
+            self.current_expected_note_step = 0
+            for note in self.notes_sequence:
+                raw_note_name = note[:-1]
+                raw_note_name = Note.CHROMATIC_SCALE_SHARP_BASED[Note.CHROMATIC_SCALE_FLAT_BASED.index(raw_note_name)]
+                octave = int(note[-1])
+                note = f"{raw_note_name}{octave}"
+                self.selected_instrument_training.show_note(note)
+                self.selected_instrument_training.do_play_note(raw_note_name, octave)
+                time.sleep(self.pause_between_notes)
+                self.selected_instrument_training.mask_note(note)
+            self.selected_instrument_training.do_start_hearing(self)
+
+    def check_note(self, note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
+        if self.debug:
+            print("expected:", self.notes_sequence[self.current_expected_note_step], "heard:", note)
+        try:
+            heard_raw_heard_note = note[:-1]
+            heard_octave = int(note[-1])
+            expected_raw_note = self.notes_sequence[self.current_expected_note_step][:-1]
+            expected_octave = int(self.notes_sequence[self.current_expected_note_step][-1])
+            if Note(heard_raw_heard_note) == Note(expected_raw_note) and heard_octave == expected_octave:
+                self.selected_instrument_training.validate_note(note)
+                self.current_expected_note_step += 1
+            if self.debug:
+                print("status:", int(100 * self.current_expected_note_step / len(self.notes_sequence)), "%")
+            if self.current_expected_note_step == len(self.notes_sequence):
+                self.selected_instrument_training.do_stop_hearing()
+                messagebox.showinfo("Harmony tools",
+                                    f"You did it!")
+        except ValueError:
+            if self.debug:
+                print("Not a note")
 
     def do_stop_exercise(self):
         pass

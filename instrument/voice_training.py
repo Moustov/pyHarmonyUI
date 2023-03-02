@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
+import threading
+import time
 import tkinter
 from datetime import datetime
 from functools import partial
-from math import floor
 from tkinter import Button
 from tkinter.ttk import Progressbar
 
 from pyharmonytools.harmony.note import Note
 
-from learning.learning_scenario import PilotableInstrument
 from audio.mic_analyzer import MicAnalyzer, MicListener
 from audio.note_player import NotePlayer
+from learning.learning_scenario import PilotableInstrument, LearningCenterInterface
 
 
 class VoiceTraining(MicListener, PilotableInstrument):
     NOTE_MUTE = "#AAAAAA"
     NOTE_HEARD = "#AA8888"
-    NOTE_SHOWN = "#EEEEEE"
+    NOTE_SHOW = "#EEEEEE"
 
     def __init__(self):
-        super().__init__()
         self.debug = False
-        self.learning_programme = None
+        self.learning_center = None
         #
         self.mic_analyzer = MicAnalyzer()
         self.mic_analyzer.add_listener(self)
@@ -60,20 +60,20 @@ class VoiceTraining(MicListener, PilotableInstrument):
             half_tone = 0
             for note in Note.CHROMATIC_SCALE_SHARP_BASED:
                 half_tone += 1
-                self.notes_buttons[str(octave)][note] = Button(ui_root_tk, text=f"{note}{octave}", bg=VoiceTraining.NOTE_MUTE,
-                                                               width=10, command=partial(self.do_play_note, note,
-                                                                                         octave))
+                self.notes_buttons[str(octave)][note] = Button(ui_root_tk,
+                                                               text=f"{note}{octave}",
+                                                               bg=VoiceTraining.NOTE_MUTE,
+                                                               width=10,
+                                                               command=partial(self.do_play_note, note, octave))
                 self.notes_buttons[str(octave)][note].grid(row=2 + half_tone, column=octave, padx=5)
-
-        self.learn_button = Button(self.ui_root_tk, text='Start Learning', command=self._do_start_learning)
-        self.learn_button.grid(row=0, column=0, columnspan=1)
 
     def do_play_note(self, note, octave):
         if self.debug:
             print(note, octave)
         self.note_player.play_note(note, octave)
 
-    def do_start_hearing(self):
+    def do_start_hearing(self, lc: LearningCenterInterface):
+        self.learning_center = lc
         self.stop_button.grid()
         self.search_button.grid_remove()
         self.start_time = datetime.now()
@@ -87,10 +87,10 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.search_button.grid()
         self.display_song()
 
-    def show_note(self, note: str):
+    def show_note(self, note: str, color: str = NOTE_SHOW):
         if self.debug:
-            print("show_note", note)
-        self._change_note_aspects(note, VoiceTraining.NOTE_SHOWN)
+            print("show_note", note, color)
+        self._change_note_aspects(note, color)
 
     def mask_note(self, note: str):
         if self.debug:
@@ -119,8 +119,26 @@ class VoiceTraining(MicListener, PilotableInstrument):
             else:
                 accuracy = 100 - 100*abs((closest_pitch - heard_freq) / closest_pitch)
                 self._change_note_aspects(new_note, VoiceTraining.NOTE_HEARD, accuracy)
-        if self.learning_programme:
-            self.learning_programme.set_current_note(new_note, heard_freq, closest_pitch)
+        if self.learning_center:
+            self.learning_center.check_note(new_note, heard_freq, closest_pitch)
+
+    def validate_note(self, note: str):
+        """
+        the note will temporarily blink to acknowledge what has been heard
+        :param note:
+        :return:
+        """
+        validate_thread = threading.Thread(target=partial(self.make_note_blink, note, "#26ea6e"), name="validate")
+        validate_thread.start()
+
+    def make_note_blink(self, note: str, color: str):
+        if self.debug:
+            print("make_note_blink", note, color)
+        for i in range(0, 5):
+            self.show_note(note, color)
+            time.sleep(0.1)
+            self.mask_note(note)
+            time.sleep(0.1)
 
     def unset_current_note(self):
         if self.debug:
@@ -140,16 +158,14 @@ class VoiceTraining(MicListener, PilotableInstrument):
         """
         if self.debug:
             print("Changed Note:", note, bg, self.current_note)
-        if note and len(note) in [2, 3] and bg and len(bg) == 7:
+        if note and len(note) in [2, 3]:     # and bg and len(bg) == 7:
             octave = note[-1]
             the_note = note[0:len(note) - 1]
-            half_tone = self.mic_analyzer.ALL_NOTES.index(the_note) + 1
-            btn_text = f"{the_note}{octave}"
             if accuracy == -1:
-                self.notes_buttons[str(octave)][the_note].configure(bg=bg)
+                btn_text = f"{the_note}{octave}"
+                self.notes_buttons[str(octave)][the_note].configure(bg=bg, text=btn_text)
             else:
                 btn_text = f"{the_note}{octave} ({round(accuracy, 2)}%)"
-                print(btn_text)
                 self.notes_buttons[str(octave)][the_note].configure(bg=bg, text=btn_text)
 
     def add_note(self, new_note):

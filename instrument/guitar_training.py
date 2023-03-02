@@ -8,7 +8,7 @@ from tkinter.ttk import Progressbar
 from pyharmonytools.guitar.guitar_neck.neck import Neck
 from pyharmonytools.harmony.note import Note
 
-from learning.learning_scenario import PilotableInstrument
+from learning.learning_scenario import PilotableInstrument, LearningCenterInterface
 from audio.mic_analyzer import MicListener, MicAnalyzer
 
 
@@ -28,8 +28,8 @@ class GuitarTraining(MicListener, PilotableInstrument):
 
     def __init__(self):
         super().__init__()
+        self.learning_center = None
         self.debug = True
-        self.learning_programme = None
         self.learn_button = None
         # guitar
         self.note_player = NotePlayer()
@@ -83,8 +83,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
         self.fretboard.grid(row=2, column=0)
         self._draw_fretboard()
         self._initialize_fingers()
-        self.learn_button = Button(self.ui_root_tk, text='Start Learning', command=self._do_start_learning)
-        self.learn_button.grid(row=0, column=0, columnspan=1)
 
     def __test_note_display(self):
         self._draw_finger_on_neck("D", the_string='E', the_fret=5)
@@ -124,7 +122,8 @@ class GuitarTraining(MicListener, PilotableInstrument):
         self.note_player.play_note(note, octave)
         self.note_player.debug = False
 
-    def do_start_hearing(self):
+    def do_start_hearing(self, lc: LearningCenterInterface):
+        self.learning_center = lc
         self.mic_analyzer.debug = True
         for n in Note.CHROMATIC_SCALE_SHARP_BASED:
             self.change_note_visible_status(n, False)
@@ -159,8 +158,8 @@ class GuitarTraining(MicListener, PilotableInstrument):
             self.current_note = new_note
             if new_note != "-":
                 self._draw_note(new_note)
-        if self.learning_programme:
-            self.learning_programme.set_current_note(new_note, heard_freq, closest_pitch)
+        if self.learning_center:
+            self.learning_center.check_note(new_note, heard_freq, closest_pitch)
 
     def change_note_visible_status(self, note_name, visible: bool):
         """
