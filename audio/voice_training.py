@@ -13,7 +13,7 @@ from audio.mic_analyzer import MicAnalyzer
 from audio.note_player import NotePlayer
 
 
-class NoteTraining(LearningEnabled):
+class VoiceTraining(LearningEnabled):
     def __init__(self):
         self.debug = False
         self.learning_programme = None
@@ -197,7 +197,7 @@ class NoteTraining(LearningEnabled):
 
 
 if __name__ == "__main__":
-    nt = NoteTraining()
+    nt = VoiceTraining()
     root = tkinter.Tk()
     root.title('Harmony tools')
     root.geometry('800x600')

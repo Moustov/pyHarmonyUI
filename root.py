@@ -9,7 +9,7 @@ from audio.capture_sound_plot import capture_and_display_sound
 from audio.learning_center import LearningCenter
 from file_capabilities.download_mp3_youtube import DownloadMP3Youtube
 from audio.guitar_training import GuitarTraining
-from audio.note_training import NoteTraining
+from audio.voice_training import VoiceTraining
 from ultimate_guitar.search_cadence import SearchSongFromCadence
 from ultimate_guitar.search_chords import SearchSongFromChords
 
@@ -56,7 +56,7 @@ class RootWindow(tkinter.Tk):
         menu_audio.add_command(label="Live analysis", command=self.do_FFT_hearing)
         menu_audio.add_separator()
         menu_audio.add_command(label="Learning Center", command=self.do_learning_center)
-        menu_audio.add_command(label="Note Training", command=self.do_note_training)
+        menu_audio.add_command(label="Voice Training", command=self.do_voice_training)
         menu_audio.add_command(label="Guitar Training", command=self.do_guitar_training)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
 
@@ -81,8 +81,8 @@ class RootWindow(tkinter.Tk):
         f.pack()
         lc.display(f)
 
-    def do_note_training(self):
-        nt = NoteTraining()
+    def do_voice_training(self):
+        nt = VoiceTraining()
         f = Frame()
         f.pack()
         nt.display(f)

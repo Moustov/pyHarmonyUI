@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from audio.note_training import NoteTraining
+from audio.voice_training import VoiceTraining
 
 
 class TestNoteTraining(TestCase):
     def test_time_string(self):
-        nt = NoteTraining()
+        nt = VoiceTraining()
         res = nt.time_string(1)
         self.assertTrue(res == "00:00:00.001")
         res = nt.time_string(10)
