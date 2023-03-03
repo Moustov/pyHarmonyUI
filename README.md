@@ -21,9 +21,9 @@ Based on [PyHarmonyToolings](https://github.com/Moustov/pyharmonytooling)
 * Live hearing: displays the signal from a mic
 * Live analysis: displays an FFT of the signal from a mic
 * record a Youtube sound on the HDD
-* Sound file loading
-* Note Training: display notes from a mic
-* Guitar Training: display notes on a guitar neck from a mic
+* Instrument Training: display notes from a mic with visual feedback
+  * Voice
+  * Guitar
 ## Ultimate Guitar features
 * Chords Search UG: search songs that match a chord sequence
 * Cadence Search UG: search songs that match a cadence
@@ -32,6 +32,8 @@ Based on [PyHarmonyToolings](https://github.com/Moustov/pyharmonytooling)
 * Find chords from tabs
 
 # Release Notes
+* 03/MAR/23
+  * learning center with voice & guitar feedback
 * 27/FEB/23
   * Guitar Training
 
