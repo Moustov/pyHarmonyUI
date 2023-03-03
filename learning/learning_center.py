@@ -70,7 +70,7 @@ class LearningCenter:
         self.learning_scenario_frame = Frame(self.ui_root_tk)
         self.learning_scenario_frame.grid(row=0, column=1, rowspan=5)
         self.selected_instrument_training = VoiceTraining()
-        self.selected_instrument_training.debug = True
+        # self.selected_instrument_training.debug = True
         self.selected_instrument_training.display(self.learning_scenario_frame)
         self.learning_center_interface.set_instrument(self.selected_instrument_training)
 

@@ -1,7 +1,7 @@
 import tkinter
 from datetime import datetime
 from functools import partial
-from tkinter import Button, Canvas, CENTER, Frame
+from tkinter import Canvas, CENTER, Frame
 from tkinter.ttk import Progressbar
 
 from pyharmonytools.guitar.guitar_neck.neck import Neck
@@ -42,8 +42,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
         self.download_thread = None
         # UI widgets
         self.progress_bar = None
-        self.start_button = None
-        self.stop_button = None
         self.ui_root_tk = None
         self.fretboard = None
         # fret representation stuffs
@@ -69,12 +67,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
 
     def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
-        self.start_button = Button(ui_root_tk, text='Start listening', command=self.do_start_hearing)
-        self.start_button.grid(row=0, column=0)
-        self.stop_button = Button(self.ui_root_tk, text='Stop listening', command=self.do_stop_hearing)
-        self.stop_button.grid(row=0, column=0)
-        self.stop_button.grid_remove()
-
         self.progress_bar = Progressbar(ui_root_tk, orient='horizontal', mode='indeterminate', length=280)
         self.progress_bar.grid(row=1, column=0)
         self.fretboard = Canvas(ui_root_tk, width=self.fretboard_width, height=self.fretboard_height,
@@ -126,8 +118,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
         self.mic_analyzer.debug = True
         for n in Note.CHROMATIC_SCALE_SHARP_BASED:
             self.change_note_visible_status(n, False)
-        self.stop_button.grid()
-        self.start_button.grid_remove()
         self.start_time = datetime.now()
         self.progress_bar.start()
         self.mic_analyzer.do_start_hearing()
@@ -137,8 +127,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
             self.change_note_visible_status(n, True)
         self.mic_analyzer.do_stop_hearing()
         self.progress_bar.stop()
-        self.stop_button.grid_remove()
-        self.start_button.grid()
         self.display_song()
 
     def set_current_note(self, new_note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):

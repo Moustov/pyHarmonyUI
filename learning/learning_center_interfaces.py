@@ -1,46 +1,47 @@
-import threading
 import time
 from copy import deepcopy
-from functools import partial
-from tkinter import Frame, messagebox, Button, Canvas
+from tkinter import Frame, Button, Canvas, Tk
 from tkinter.constants import *
+
+import PIL.ImageTk
+from PIL import Image
 from pyharmonytools.harmony.note import Note
 
 
 class LearningCenterInterface:
+    img = Image.open("resources/checked_icon.png")
+
     def __init__(self):
+        self.demonstrate_thread = None
+        self.blinking_running = False
+        self.preview_running = False
+        self.achieved_img_id = None
         self.canvas_step_notes = None
         self.status_button = None
         self.module_path_canvas = None
         self.module_path_canvas_height = 100
         self.module_path_canvas_width = 500
-        self.pause_button = None
+        self.hear_button = None
         self.scenario = None
         self.stop_button = None
-        self.start_button = None
+        self.demonstrate_button = None
         self.debug = True
         self.ui_root_tk = None
         self.pause_between_notes = 1
         self.notes_sequence = None
         self.current_expected_note_step = 0
         self.selected_instrument_training = None
+        self.exercise_achieved_img = self.img.resize((20, 20), Image.LANCZOS)
+        self.achieved_pyimg = None
 
     def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
 
-        self.start_button = Button(ui_root_tk, text='Start exercise', command=self.do_start_exercise, state=DISABLED)
-        self.start_button.grid(row=0, column=0)
+        self.demonstrate_button = Button(ui_root_tk, text='Hear exercise', command=self.do_demonstrate_exercise)
+        self.demonstrate_button.grid(row=0, column=0)
 
-        self.pause_button = Button(self.ui_root_tk, text='Pause exercise', command=self.do_stop_exercise)
-        self.pause_button.grid(row=0, column=1)
-        self.pause_button.grid_remove()
-
-        self.stop_button = Button(self.ui_root_tk, text='Stop exercise', command=self.do_stop_exercise)
-        self.stop_button.grid(row=0, column=0)
-        self.stop_button.grid_remove()
-
-        self.status_button = Button(self.ui_root_tk, text='--', state=DISABLED)
-        self.status_button.grid(row=0, column=2)
+        self.hear_button = Button(self.ui_root_tk, text='Try it...', command=self.do_hear_user)
+        self.hear_button.grid(row=0, column=1)
 
         self.module_path_canvas = Canvas(ui_root_tk, width=self.module_path_canvas_width,
                                          height=self.module_path_canvas_height,
@@ -50,7 +51,7 @@ class LearningCenterInterface:
     def set_instrument(self, instrument):
         self.selected_instrument_training = instrument
         if self.selected_instrument_training and self.scenario:
-            self.start_button.config(state=NORMAL)
+            self.demonstrate_button.config(state=NORMAL)
 
     def set_training_module(self, module_content: dict):
         """
@@ -60,7 +61,7 @@ class LearningCenterInterface:
         """
         self.scenario = deepcopy(module_content)
         if self.selected_instrument_training and self.scenario:
-            self.start_button.config(state=NORMAL)
+            self.demonstrate_button.config(state=NORMAL)
         self.notes_sequence = self.scenario["play_notes"].split("-")
         self.module_path_canvas.delete("all")
         note_width = 20
@@ -72,9 +73,9 @@ class LearningCenterInterface:
         step_index = 1
         self.canvas_step_notes = []
         self.module_path_canvas.create_line(0, self.module_path_canvas_height / 2 + note_width / 2,
-                                       self.module_path_canvas_width,
-                                       self.module_path_canvas_height / 2 + note_width / 2,
-                                       fill="lightgray", width=5)
+                                            self.module_path_canvas_width,
+                                            self.module_path_canvas_height / 2 + note_width / 2,
+                                            fill="lightgray", width=5)
         for step in self.notes_sequence:
             nw_x = margin_W + step_index * note_interval + 3
             nw_y = self.module_path_canvas_height / 2
@@ -86,6 +87,15 @@ class LearningCenterInterface:
             text_id = self.module_path_canvas.create_text(nw_x + note_width / 2, nw_y + note_width / 2, text=step,
                                                           font=font, anchor=CENTER, fill="#222222", tags=step)
             self.canvas_step_notes.append((oval_id, text_id))
+
+        self.achieved_pyimg = PIL.ImageTk.PhotoImage(self.exercise_achieved_img)
+        self.achieved_img_id = self.module_path_canvas.create_image(self.module_path_canvas_width - 20,
+                                                                    self.module_path_canvas_height / 2,
+                                                                    anchor=NW, image=self.achieved_pyimg,
+                                                                    state='hidden')
+        Tk.update(self.ui_root_tk)
+        if self.debug:
+            print("self.achieved_img_id", self.achieved_img_id)
 
     def check_note(self, note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
         if self.debug:
@@ -101,33 +111,76 @@ class LearningCenterInterface:
             if self.debug:
                 print("status:", int(100 * self.current_expected_note_step / len(self.notes_sequence)), "%")
             if self.current_expected_note_step == len(self.notes_sequence):
-                self.selected_instrument_training.do_stop_hearing()
-                messagebox.showinfo("Harmony tools",
-                                    f"You did it!")
+                self.module_path_canvas.itemconfigure(self.achieved_img_id, state='normal')
+                self.do_stop_exercise()
+                Tk.update(self.ui_root_tk)
         except ValueError:
             if self.debug:
                 print("Not a note")
 
-    def do_start_exercise(self):
+    def do_demonstrate_exercise(self):
+        """
+        demonstrate the sequence to practice
+        :return:
+        """
         if self.selected_instrument_training and self.scenario:
-            # self.learning_scenario = LearningScenario()
-            # self.learning_scenario.start_learning(self.selected_instrument_training, self.scenario)
-
-            self.selected_instrument_training.debug = True
+            self.set_training_module(self.scenario)
+            # self.selected_instrument_training.debug = True
+            self.selected_instrument_training.clear_notes()
             self.current_expected_note_step = 0
             for note in self.notes_sequence:
                 raw_note_name = note[:-1]
                 raw_note_name = Note.CHROMATIC_SCALE_SHARP_BASED[Note.CHROMATIC_SCALE_FLAT_BASED.index(raw_note_name)]
                 octave = int(note[-1])
                 note = f"{raw_note_name}{octave}"
-                self.selected_instrument_training.show_note(note)
-                self.selected_instrument_training.do_play_note(raw_note_name, octave)
+                self._preview_step(self.current_expected_note_step, "#26ea6e")
                 time.sleep(self.pause_between_notes)
                 self.selected_instrument_training.mask_note(note)
+                self.current_expected_note_step += 1
+        self.current_expected_note_step = 0
+
+    def do_hear_user(self):
+        if self.selected_instrument_training and self.scenario:
+            # hear
+            self.set_training_module(self.scenario)
+            self.selected_instrument_training.clear_notes()
+            self.current_expected_note_step = 0
             self.selected_instrument_training.do_start_hearing(self)
 
     def do_stop_exercise(self):
-        pass
+        self.selected_instrument_training.do_stop_hearing()
+
+    def demonstrate_step(self, step: int):
+        """
+        the note will temporarily blink to acknowledge what has been heard
+        :param step:
+        :return:
+        """
+        self._preview_step(step, "#26ea6e")
+
+    def _preview_step(self, note_index: int, color: str):
+        """
+        the note will temporarily blink to acknowledge what has been heard
+        :param note:
+        :return:
+        """
+        self.preview_running = True
+        note = self.notes_sequence[note_index]
+        raw_note_name = note[:-1]
+        if 'b' in raw_note_name:
+            raw_note_name = Note.CHROMATIC_SCALE_SHARP_BASED[Note.CHROMATIC_SCALE_FLAT_BASED.index(raw_note_name)]
+        octave = int(note[-1])
+        note = f"{raw_note_name}{octave}"
+        self.selected_instrument_training.do_play_note(raw_note_name, octave)
+        self.validate_current_step()
+        self.selected_instrument_training.show_note(note)
+        the_note = self.canvas_step_notes[note_index]
+        if self.debug:
+            print(note_index, raw_note_name, octave, the_note)
+        Tk.update(self.ui_root_tk)
+        self.module_path_canvas.itemconfigure(the_note[0], state='normal', fill="#DDDDDD")
+        self.module_path_canvas.itemconfigure(the_note[1], state='normal')
+        self.preview_running = False
 
     def validate_current_step(self):
         """
@@ -135,13 +188,12 @@ class LearningCenterInterface:
         :param note:
         :return:
         """
-        validate_thread = threading.Thread(target=partial(self.make_note_blink,
-                                                          self.current_expected_note_step,
-                                                          "#26ea6e"),
-                                           name="validate")
-        validate_thread.start()
+        the_note = self.canvas_step_notes[self.current_expected_note_step]
+        self.module_path_canvas.itemconfigure(the_note[0], state='normal', fill="#26ea6e")
+        self.module_path_canvas.itemconfigure(the_note[1], state='normal')
 
     def make_note_blink(self, note_index: int, new_color: str):
+        self.blinking_running = True
         if self.debug:
             print("make_note_blink", note_index, new_color)
         the_note = self.canvas_step_notes[note_index]
@@ -154,3 +206,4 @@ class LearningCenterInterface:
             time.sleep(0.1)
         self.module_path_canvas.itemconfigure(the_note[0], state='normal', fill=new_color)
         self.module_path_canvas.itemconfigure(the_note[1], state='normal')
+        self.blinking_running = False

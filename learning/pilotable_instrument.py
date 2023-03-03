@@ -12,6 +12,13 @@ class PilotableInstrument:
         """
         pass
 
+    def reset_display(self):
+        """
+        clear all note
+        :return:
+        """
+        pass
+
     def show_note(self, new_note: str, color: str):
         """
         shows temporarily a note

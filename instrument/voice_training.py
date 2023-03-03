@@ -25,8 +25,6 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.mic_analyzer.add_listener(self)
         # UI data
         self.progress_bar = None
-        self.search_button = None
-        self.stop_button = None
         self.ui_root_tk = None
         self.notes_buttons = {}
         self.learning_thread = None
@@ -45,12 +43,6 @@ class VoiceTraining(MicListener, PilotableInstrument):
 
     def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
-        self.search_button = Button(ui_root_tk, text='Listen', command=self.do_start_hearing)
-        self.search_button.grid(row=0, column=4, columnspan=2)
-        self.stop_button = Button(self.ui_root_tk, text='Stop', command=self.do_stop_hearing)
-        self.stop_button.grid(row=0, column=4, columnspan=2)
-        self.stop_button.grid_remove()
-
         self.progress_bar = Progressbar(ui_root_tk, orient='horizontal', mode='indeterminate', length=280)
         self.progress_bar.grid(row=1, column=0, columnspan=9)
         for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
@@ -72,8 +64,6 @@ class VoiceTraining(MicListener, PilotableInstrument):
 
     def do_start_hearing(self, lc: LearningCenterInterface):
         self.learning_center = lc
-        self.stop_button.grid()
-        self.search_button.grid_remove()
         self.start_time = datetime.now()
         self.progress_bar.start()
         self.mic_analyzer.do_start_hearing()
@@ -81,8 +71,6 @@ class VoiceTraining(MicListener, PilotableInstrument):
     def do_stop_hearing(self):
         self.mic_analyzer.do_stop_hearing()
         self.progress_bar.stop()
-        self.stop_button.grid_remove()
-        self.search_button.grid()
         self.display_song()
 
     def show_note(self, note: str, color: str = NOTE_SHOW):
@@ -153,7 +141,8 @@ class VoiceTraining(MicListener, PilotableInstrument):
             now = datetime.now()
             self.chrono = (now - self.start_time)
             self.song.append((new_note, self.chrono))
-            print("add_note", self.current_note, (new_note, self.chrono))
+            if self.debug:
+                print("add_note", self.current_note, (new_note, self.chrono))
 
     def display_song(self):
         for note in self.song:
