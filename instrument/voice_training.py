@@ -1,17 +1,15 @@
-#!/usr/bin/env python3
-import threading
-import time
 import tkinter
 from datetime import datetime
 from functools import partial
-from tkinter import Button
+from tkinter import Button, Frame
 from tkinter.ttk import Progressbar
 
 from pyharmonytools.harmony.note import Note
 
 from audio.mic_analyzer import MicAnalyzer, MicListener
 from audio.note_player import NotePlayer
-from learning.learning_scenario import PilotableInstrument, LearningCenterInterface
+from learning.learning_center_interfaces import LearningCenterInterface
+from learning.pilotable_instrument import PilotableInstrument
 
 
 class VoiceTraining(MicListener, PilotableInstrument):
@@ -45,7 +43,7 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.learn_button = None
         self.note_player = NotePlayer()
 
-    def display(self, ui_root_tk: tkinter.Tk):
+    def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
         self.search_button = Button(ui_root_tk, text='Listen', command=self.do_start_hearing)
         self.search_button.grid(row=0, column=4, columnspan=2)
@@ -121,24 +119,6 @@ class VoiceTraining(MicListener, PilotableInstrument):
                 self._change_note_aspects(new_note, VoiceTraining.NOTE_HEARD, accuracy)
         if self.learning_center:
             self.learning_center.check_note(new_note, heard_freq, closest_pitch)
-
-    def validate_note(self, note: str):
-        """
-        the note will temporarily blink to acknowledge what has been heard
-        :param note:
-        :return:
-        """
-        validate_thread = threading.Thread(target=partial(self.make_note_blink, note, "#26ea6e"), name="validate")
-        validate_thread.start()
-
-    def make_note_blink(self, note: str, color: str):
-        if self.debug:
-            print("make_note_blink", note, color)
-        for i in range(0, 5):
-            self.show_note(note, color)
-            time.sleep(0.1)
-            self.mask_note(note)
-            time.sleep(0.1)
 
     def unset_current_note(self):
         if self.debug:

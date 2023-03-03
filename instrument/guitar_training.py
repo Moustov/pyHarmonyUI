@@ -1,21 +1,17 @@
-#!/usr/bin/env python3
-import threading
-import time
 import tkinter
 from datetime import datetime
 from functools import partial
-from tkinter import Button, Canvas, CENTER
+from tkinter import Button, Canvas, CENTER, Frame
 from tkinter.ttk import Progressbar
 
 from pyharmonytools.guitar.guitar_neck.neck import Neck
 from pyharmonytools.harmony.note import Note
 
-from learning.learning_scenario import PilotableInstrument, LearningCenterInterface
 from audio.mic_analyzer import MicListener, MicAnalyzer
-
-
 # handling click on note : https://www.hashbangcode.com/article/using-events-tkinter-canvas-elements-python
 from audio.note_player import NotePlayer
+from learning.learning_center_interfaces import LearningCenterInterface
+from learning.pilotable_instrument import PilotableInstrument
 
 
 class GuitarTraining(MicListener, PilotableInstrument):
@@ -71,7 +67,7 @@ class GuitarTraining(MicListener, PilotableInstrument):
         self.current_note = None
         self.previous_note = None
 
-    def display(self, ui_root_tk: tkinter.Tk):
+    def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
         self.start_button = Button(ui_root_tk, text='Start listening', command=self.do_start_hearing)
         self.start_button.grid(row=0, column=0)
@@ -86,10 +82,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
         self.fretboard.grid(row=2, column=0)
         self._draw_fretboard()
         self._initialize_fingers()
-
-        self.status_button = Button(ui_root_tk, text='OK', bg="#26ea6e")
-        self.status_button.grid(row=3, column=0)
-        self.status_button.grid_remove()
 
     def __test_note_display(self):
         self._draw_finger_on_neck("D", the_string='E', the_fret=5)
@@ -191,24 +183,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
             self.previous_note = self.current_note
             self.current_note = "-"
 
-    def validate_note(self, note: str):
-        """
-        the note will temporarily blink to acknowledge what has been heard
-        :param note:
-        :return:
-        """
-        validate_thread = threading.Thread(target=partial(self.make_note_blink, note, "#26ea6e"), name="validate")
-        validate_thread.start()
-
-    def make_note_blink(self, note: str, color: str):
-        if self.debug:
-            print("make_note_blink", note, color)
-        for i in range(0, 5):
-            self.status_button.grid_remove()
-            time.sleep(0.1)
-            self.status_button.grid()
-            time.sleep(0.1)
-
     def add_note_to_song(self, new_note):
         if self.previous_note != new_note:
             now = datetime.now()
@@ -301,7 +275,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
         if self.debug:
             print("show_note", note)
         self.change_note_visible_status(note, True)
-
 
     def mask_note(self, note: str):
         if self.debug:

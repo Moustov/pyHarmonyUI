@@ -1,9 +1,4 @@
-class LearningCenterInterface:
-    def __init__(self):
-        pass
-
-    def check_note(self, new_note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
-        pass
+from learning.learning_center_interfaces import LearningCenterInterface
 
 
 class PilotableInstrument:
@@ -20,6 +15,7 @@ class PilotableInstrument:
     def show_note(self, new_note: str, color: str):
         """
         shows temporarily a note
+        :param color: #RRGGBB in hexa
         :param new_note:
         :return:
         """
@@ -72,13 +68,3 @@ class PilotableInstrument:
         :return:
         """
         pass
-
-    def validate_note(self, new_note):
-        """
-        the note will temporarily blink to acknowledge waht has been heard
-        :param new_note:
-        :return:
-        """
-        pass
-
-
