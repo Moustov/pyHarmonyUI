@@ -17,6 +17,7 @@ class LearningCenter:
     MODULES_PATH = 'learning modules/'
 
     def __init__(self):
+        self.reload_button = None
         self.selected_instrument_training = None
         self.learning_center_interface = None
         self.learning_status_frame = None
@@ -37,6 +38,9 @@ class LearningCenter:
         self.select_module_label = Label(self.ui_root_tk, text="Select your training module")
         self.select_module_label.grid(row=0, column=0)
 
+        self.reload_button = Button(ui_root_tk, text='Reload', command=self.do_reload_exercises)
+        self.reload_button.grid(row=1, column=0)
+
         self.list_of_modules = Treeview(self.ui_root_tk)
         self.list_of_modules['columns'] = ('Name', 'Description', 'Content')
         self.list_of_modules.column("#0", width=0, stretch=NO)
@@ -49,21 +53,21 @@ class LearningCenter:
         self.list_of_modules.heading('Content', text="Content", anchor=CENTER)
         # http://tkinter.fdex.eu/doc/event.html#events
         self.list_of_modules.bind("<ButtonRelease-1>", self._do_module_select)
-        self.list_of_modules.grid(row=1, column=0)
+        self.list_of_modules.grid(row=2, column=0)
         self.fill_list_of_modules()
 
         self.select_instrument_label = Label(self.ui_root_tk, text="Select your instrument")
-        self.select_instrument_label.grid(row=2, column=0)
+        self.select_instrument_label.grid(row=3, column=0)
 
         self.instruments = ["Voice", "Guitar", "Piano", "Flute", "Saxophone"]
         self.instrument_combobox = Combobox(self.ui_root_tk, values=self.instruments)
         self.instrument_combobox.bind('<<ComboboxSelected>>', self._do_select_instrument)
         self.instrument_combobox.current(0)
-        self.instrument_combobox.grid(row=3, column=0)
+        self.instrument_combobox.grid(row=4, column=0)
 
         # instrument feedback + training factors (how hard)
         self.learning_status_frame = Frame(self.ui_root_tk)
-        self.learning_status_frame.grid(row=5, column=0, columnspan=2)
+        self.learning_status_frame.grid(row=6, column=0, columnspan=2)
         self.learning_center_interface = LearningCenterInterface()
         self.learning_center_interface.display(self.learning_status_frame)
 
@@ -74,13 +78,18 @@ class LearningCenter:
         self.selected_instrument_training.display(self.learning_scenario_frame)
         self.learning_center_interface.set_instrument(self.selected_instrument_training)
 
+    def do_reload_exercises(self):
+        self.fill_list_of_modules()
+
     def _do_module_select(self, event):
         item = self.list_of_modules.item(self.list_of_modules.selection())['values']
-        print("Selected item : ", item)
-        f = open(f"{LearningCenter.MODULES_PATH}{item[0]}.json")
-        module_content = json.load(f)
-        f.close()
-        self.learning_center_interface.set_training_module(module_content)
+        if item:
+            f = open(f"{LearningCenter.MODULES_PATH}{item[0]}.json")
+            module_content = json.load(f)
+            f.close()
+            self.learning_center_interface.set_training_module(module_content)
+        else:
+            self.do_reload_exercises()
 
     def _do_select_instrument(self, event):
         # "Voice", "Guitar", "Piano", "Flute", "Saxophone"
@@ -100,6 +109,8 @@ class LearningCenter:
             self.selected_instrument_training.display(self.learning_scenario_frame)
 
     def fill_list_of_modules(self):
+        for item in self.list_of_modules.get_children():
+            self.list_of_modules.delete(item)
         modules = os.listdir(LearningCenter.MODULES_PATH)
         index = 0
         for module in modules:
