@@ -1,8 +1,8 @@
 import json
 import os
-import time
 import tkinter
-from tkinter import Button, Label, Frame, messagebox
+from copy import deepcopy
+from tkinter import Button, Label, Frame, messagebox, Scale, Tk
 from tkinter.constants import *
 from tkinter.ttk import Treeview, Combobox
 
@@ -17,6 +17,9 @@ class LearningCenter:
     MODULES_PATH = 'learning modules/'
 
     def __init__(self):
+        self.transposed_training_module = None
+        self.previous_transposition_value = 0
+        self.transpose_scale = None
         self.reload_button = None
         self.selected_instrument_training = None
         self.learning_center_interface = None
@@ -30,7 +33,7 @@ class LearningCenter:
         self.debug = True
         self.learning_scenario = None
         self.ui_root_tk = None
-        self.scenario = None
+        self.selected_training_module = None
 
     def display(self, ui_root_tk: tkinter.Tk):
         self.ui_root_tk = ui_root_tk
@@ -64,13 +67,17 @@ class LearningCenter:
         self.instrument_combobox.bind('<<ComboboxSelected>>', self._do_select_instrument)
         self.instrument_combobox.current(0)
         self.instrument_combobox.grid(row=4, column=0)
-
-        # instrument feedback + training factors (how hard)
+        # learning params
+        self.transpose_scale = Scale(self.ui_root_tk, from_=-11, to=11, tickinterval=3,  length=200, orient=HORIZONTAL,
+                                     command=self._do_transpose_change)
+        self.transpose_scale.set(0)
+        self.transpose_scale.grid(row=5, column=0)
+        # learning feedback
         self.learning_status_frame = Frame(self.ui_root_tk)
-        self.learning_status_frame.grid(row=6, column=0, columnspan=2)
+        self.learning_status_frame.grid(row=6, column=1, columnspan=2)
         self.learning_center_interface = LearningCenterInterface()
         self.learning_center_interface.display(self.learning_status_frame)
-
+        # instrument feedback
         self.learning_scenario_frame = Frame(self.ui_root_tk)
         self.learning_scenario_frame.grid(row=0, column=1, rowspan=5)
         self.selected_instrument_training = VoiceTraining()
@@ -78,15 +85,40 @@ class LearningCenter:
         self.selected_instrument_training.display(self.learning_scenario_frame)
         self.learning_center_interface.set_instrument(self.selected_instrument_training)
 
+    def _do_transpose_change(self, event):
+        transposed_value = self.transpose_scale.get()
+        print(transposed_value)
+        notes = self.selected_training_module["play_notes"].split("-")
+        self.transposed_training_module = deepcopy(self.selected_training_module)
+        new_notes = []
+        Note.debug = True
+        no_error = True
+        for n in notes:
+            try:
+                new_notes.append(Note(n).transpose(transposed_value))
+            except ValueError as ve:
+                self.transpose_scale.set(self.previous_transposition_value)
+                Tk.update(self.ui_root_tk)
+                no_error = False
+                messagebox.showinfo("Transpose", str(ve))
+                break
+        if no_error:
+            self.transpose_scale.set(transposed_value)
+            self.previous_transposition_value = transposed_value
+            self.transposed_training_module["play_notes"] = "-".join(new_notes)
+            self.learning_center_interface.set_training_module(self.transposed_training_module)
+
     def do_reload_exercises(self):
         self.fill_list_of_modules()
 
     def _do_module_select(self, event):
         item = self.list_of_modules.item(self.list_of_modules.selection())['values']
         if item:
+            self.transpose_scale.set(0)
             f = open(f"{LearningCenter.MODULES_PATH}{item[0]}.json")
             module_content = json.load(f)
             f.close()
+            self.selected_training_module = module_content
             self.learning_center_interface.set_training_module(module_content)
         else:
             self.do_reload_exercises()

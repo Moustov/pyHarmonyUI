@@ -132,9 +132,9 @@ class LearningCenterInterface:
             self.selected_instrument_training.clear_notes()
             self.current_expected_note_step = 0
             for note in self.notes_sequence:
-                raw_note_name = note[:-1]
-                raw_note_name = Note.CHROMATIC_SCALE_SHARP_BASED[Note.CHROMATIC_SCALE_FLAT_BASED.index(raw_note_name)]
-                octave = int(note[-1])
+                n = Note(note)
+                raw_note_name = n.get_sharp_based_note()
+                octave = n.octave
                 note = f"{raw_note_name}{octave}"
                 self._preview_step(self.current_expected_note_step, "#26ea6e")
                 time.sleep(self.pause_between_notes)
