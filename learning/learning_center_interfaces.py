@@ -21,7 +21,7 @@ class LearningCenterInterface:
         self.module_path_canvas = None
         self.module_path_canvas_height = 100
         self.module_path_canvas_width = 500
-        self.hear_button = None
+        self.hear_user_button = None
         self.scenario = None
         self.stop_button = None
         self.demonstrate_button = None
@@ -37,11 +37,12 @@ class LearningCenterInterface:
     def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
 
-        self.demonstrate_button = Button(ui_root_tk, text='Hear exercise', command=self.do_demonstrate_exercise)
+        self.demonstrate_button = Button(ui_root_tk, text='Hear exercise',
+                                         command=self.do_demonstrate_exercise, state=DISABLED)
         self.demonstrate_button.grid(row=0, column=0)
 
-        self.hear_button = Button(self.ui_root_tk, text='Try it...', command=self.do_hear_user)
-        self.hear_button.grid(row=0, column=1)
+        self.hear_user_button = Button(self.ui_root_tk, text='Try it...', command=self.do_hear_user, state=DISABLED)
+        self.hear_user_button.grid(row=0, column=1)
 
         self.module_path_canvas = Canvas(ui_root_tk, width=self.module_path_canvas_width,
                                          height=self.module_path_canvas_height,
@@ -51,7 +52,7 @@ class LearningCenterInterface:
     def set_instrument(self, instrument):
         self.selected_instrument_training = instrument
         if self.selected_instrument_training and self.scenario:
-            self.demonstrate_button.config(state=NORMAL)
+            self.hear_user_button.config(state=NORMAL)
 
     def set_training_module(self, module_content: dict):
         """
@@ -60,8 +61,10 @@ class LearningCenterInterface:
         :return:
         """
         self.scenario = deepcopy(module_content)
-        if self.selected_instrument_training and self.scenario:
+        if self.scenario:
             self.demonstrate_button.config(state=NORMAL)
+        if self.selected_instrument_training and self.scenario:
+            self.hear_user_button.config(state=NORMAL)
         self.notes_sequence = self.scenario["play_notes"].split("-")
         self.module_path_canvas.delete("all")
         note_width = 20
@@ -72,9 +75,9 @@ class LearningCenterInterface:
         font = ('Helvetica', 10)
         step_index = 1
         self.canvas_step_notes = []
-        self.module_path_canvas.create_line(0, self.module_path_canvas_height / 2 + note_width / 2,
+        self.module_path_canvas.create_line(0, self.module_path_canvas_height / 2 - note_width / 2 + margin_N,
                                             self.module_path_canvas_width,
-                                            self.module_path_canvas_height / 2 + note_width / 2,
+                                            self.module_path_canvas_height / 2 - note_width / 2 + margin_N,
                                             fill="lightgray", width=5)
         for step in self.notes_sequence:
             nw_x = margin_W + step_index * note_interval + 3
@@ -82,20 +85,20 @@ class LearningCenterInterface:
             se_x = nw_x + note_width
             se_y = nw_y + note_width
             step_index += 1
-            oval_id = self.module_path_canvas.create_oval(nw_x, nw_y, se_x, se_y, fill="#DDDDDD",
+            oval_id = self.module_path_canvas.create_oval(nw_x, nw_y - note_width / 2, se_x, se_y - note_width / 2, fill="#DDDDDD",
                                                           outline="#AAAAAA", width=1, tags=step)
-            text_id = self.module_path_canvas.create_text(nw_x + note_width / 2, nw_y + note_width / 2, text=step,
-                                                          font=font, anchor=CENTER, fill="#222222", tags=step)
+            text_id = self.module_path_canvas.create_text(nw_x + note_width / 2, nw_y - note_width / 2 + margin_N,
+                                                          text=step, font=font, anchor=CENTER, fill="#222222",
+                                                          tags=step)
             self.canvas_step_notes.append((oval_id, text_id))
 
         self.achieved_pyimg = PIL.ImageTk.PhotoImage(self.exercise_achieved_img)
         self.achieved_img_id = self.module_path_canvas.create_image(self.module_path_canvas_width - 20,
-                                                                    self.module_path_canvas_height / 2,
+                                                                    self.module_path_canvas_height / 2
+                                                                    + margin_N - note_width,
                                                                     anchor=NW, image=self.achieved_pyimg,
                                                                     state='hidden')
         Tk.update(self.ui_root_tk)
-        if self.debug:
-            print("self.achieved_img_id", self.achieved_img_id)
 
     def check_note(self, note: str, heard_freq: float = 0.0, closest_pitch: float = 0.0):
         if self.debug:

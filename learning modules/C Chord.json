@@ -1,1 +1,1 @@
-{"name": "C chord", "description": "", "play_notes": "C3-E3-G3", "check condition": 100}
+{"name": "C chord", "description": "root position", "play_notes": "C3-E3-G3", "next possible": "C chord2, C chord3"}
