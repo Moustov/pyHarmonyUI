@@ -1,9 +1,17 @@
+from pyharmonytools.harmony.note import Note
+
 from learning.learning_center_interfaces import LearningCenterInterface
 
 
 class PilotableInstrument:
     def __init__(self):
         pass
+
+    def get_lowest_note(self) -> Note:
+        return Note("C0")
+
+    def get_highest_note(self) -> Note:
+        return Note("B9")
 
     def clear_notes(self):
         """

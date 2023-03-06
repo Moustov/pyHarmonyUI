@@ -116,6 +116,12 @@ class VoiceTraining(MicListener, PilotableInstrument):
             self.previous_note = self.current_note
             self.current_note = "-"
 
+    def get_lowest_note(self) -> Note:
+        return Note("C0")
+
+    def get_highest_note(self) -> Note:
+        return Note("B9")
+
     def _change_note_aspects(self, note: str, bg: str, accuracy: float = -1):
         """
 

@@ -191,6 +191,12 @@ class GuitarTraining(MicListener, PilotableInstrument):
         for p in pos:
             self._draw_finger_on_neck(raw_note, p[0], p[1])
 
+    def get_lowest_note(self) -> Note:
+        return Note("E2")
+
+    def get_highest_note(self) -> Note:
+        return Note("A#5")
+
     def _draw_finger_on_neck(self, note: str, the_string: str, the_fret: int):
         """
 
