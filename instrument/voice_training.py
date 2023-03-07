@@ -1,7 +1,7 @@
 import tkinter
 from datetime import datetime
 from functools import partial
-from tkinter import Button, Frame
+from tkinter import Button, Frame, Radiobutton, LabelFrame
 from tkinter.ttk import Progressbar
 
 from pyharmonytools.harmony.note import Note
@@ -19,11 +19,24 @@ class VoiceTraining(MicListener, PilotableInstrument):
     NOTE_DISABLED = "#222222"
 
     def __init__(self):
+        self.calibration_labelframe = None
+        self.calibration_radio = None
+        self.castrato_radio = None
+        self.progress_bar_labelframe = None
+        self.notes_labelframe = None
+        self.soprano_radio = None
+        self.mezzo_soprano_radio = None
+        self.contralto_radio = None
+        self.tenor_radio = None
+        self.baritone_radio = None
+        self.bass_radio = None
+        self.vocal_range = tkinter.StringVar()
+        self.vocal_ranges_labelframe = None
         self.calibrating_highest_note = None
         self.calibrating_lowest_note = None
         self.nb_samples = 20
         self.calibrate_highest_button = None
-        self.calibrate_lowest_button = None
+        self.calibrate_button = None
         self.highest_note = None
         self.lowest_note = None
         self.debug = False
@@ -61,46 +74,110 @@ class VoiceTraining(MicListener, PilotableInstrument):
 
     def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
-        self.calibrate_lowest_button = Button(ui_root_tk, text=f"Calibrate\nlowest",
-                                              width=10, command=self._do_calibrate_lowest)
-        self.calibrate_lowest_button.grid(row=1, column=0)
-        self.calibrate_highest_button = Button(ui_root_tk, text=f"Calibrate\nhighest",
-                                               width=10, command=self._do_calibrate_highest)
-        self.calibrate_highest_button.grid(row=1, column=1)
 
-        self.progress_bar = Progressbar(ui_root_tk, orient='horizontal', mode='indeterminate', length=280)
-        self.progress_bar.grid(row=2, column=0, columnspan=9)
+        self.vocal_ranges_labelframe = LabelFrame(self.ui_root_tk, text='Vocal ranges')
+        self.vocal_ranges_labelframe.grid(row=0, column=0, rowspan=2)
+
+        self.calibration_labelframe = LabelFrame(self.vocal_ranges_labelframe, text='Calibration')
+        self.calibration_labelframe.grid(row=0, column=0)
+        self.calibrate_button = Button(self.calibration_labelframe, text=f"Voice\nCalibration",
+                                       width=10, command=self._do_calibrate_with_voice)
+        self.calibrate_button.grid(row=1, column=0)
+        self.calibration_radio = Radiobutton(self.calibration_labelframe, text="Calibration",
+                                             variable=self.vocal_range,
+                                             value="Calibration", command=self._do_change_vocal_range)
+        self.calibration_radio.grid(row=1, column=1)
+
+        # classical voice ranges https://en.wikipedia.org/wiki/Vocal_range
+        self.bass_radio = Radiobutton(self.vocal_ranges_labelframe, text="Bass (E2->E4)",
+                                      variable=self.vocal_range,
+                                      value="Bass", command=self._do_change_vocal_range)
+        self.bass_radio.grid(row=1, column=0)
+        self.baritone_radio = Radiobutton(self.vocal_ranges_labelframe, text="Baritone (G2->F4)",
+                                          variable=self.vocal_range,
+                                          value="Baritone", command=self._do_change_vocal_range)
+        self.baritone_radio.grid(row=1, column=1)
+        self.tenor_radio = Radiobutton(self.vocal_ranges_labelframe, text="Tenor (B2->A4)",
+                                       variable=self.vocal_range,
+                                       value="Tenor", command=self._do_change_vocal_range)
+        self.tenor_radio.grid(row=1, column=2)
+        self.contralto_radio = Radiobutton(self.vocal_ranges_labelframe, text="Contralto (F3->E5)",
+                                           variable=self.vocal_range,
+                                           value="Contralto", command=self._do_change_vocal_range)
+        self.contralto_radio.grid(row=2, column=0)
+        self.mezzo_soprano_radio = Radiobutton(self.vocal_ranges_labelframe, text="Mezzo-soprano (A3->A5)",
+                                               variable=self.vocal_range,
+                                               value="Mezzo-soprano", command=self._do_change_vocal_range)
+        self.mezzo_soprano_radio.grid(row=2, column=1)
+        self.soprano_radio = Radiobutton(self.vocal_ranges_labelframe, text="Soprano (C4->C6)",
+                                         variable=self.vocal_range,
+                                         value="Soprano", command=self._do_change_vocal_range)
+        self.soprano_radio.grid(row=2, column=2)
+        # https://startsingingtoday.com/castrato-singers-today/
+        self.castrato_radio = Radiobutton(self.vocal_ranges_labelframe, text="Castrato (A3->D6)",
+                                          variable=self.vocal_range,
+                                          value="Castrato", command=self._do_change_vocal_range)
+        self.castrato_radio.grid(row=3, column=0)
+        self.vocal_range.set('Vocal ranges')
+
+        self.progress_bar_labelframe = LabelFrame(self.ui_root_tk, text='Microphone')
+        self.progress_bar_labelframe.grid(row=2, column=0)
+        self.progress_bar = Progressbar(self.progress_bar_labelframe, orient='horizontal', mode='indeterminate',
+                                        length=280)
+        self.progress_bar.grid(row=1, column=0, columnspan=9)
+        self.notes_labelframe = LabelFrame(self.ui_root_tk, text='Notes')
+        self.notes_labelframe.grid(row=3, column=0)
         for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
             self.notes_buttons[str(octave)] = {}
             half_tone = 0
             for note in Note.CHROMATIC_SCALE_SHARP_BASED:
                 half_tone += 1
-                self.notes_buttons[str(octave)][note] = Button(ui_root_tk,
+                self.notes_buttons[str(octave)][note] = Button(self.notes_labelframe,
                                                                text=f"{note}{octave}",
                                                                bg=VoiceTraining.NOTE_MUTE,
                                                                width=10,
                                                                command=partial(self.do_play_note, note, octave))
-                self.notes_buttons[str(octave)][note].grid(row=3 + half_tone, column=octave, padx=5)
+                self.notes_buttons[str(octave)][note].grid(row=1 + half_tone, column=octave, padx=5)
 
-    def _do_calibrate_lowest(self):
+    def _do_change_vocal_range(self):
+        selected_range = self.vocal_range.get()
+        if selected_range == "Bass":
+            self.lowest_note = Note("E2")
+            self.highest_note = Note("E4")
+        elif selected_range == "Baritone":
+            self.lowest_note = Note("G2")
+            self.highest_note = Note("F4")
+        elif selected_range == "Tenor":
+            self.lowest_note = Note("F3")
+            self.highest_note = Note("E5")
+        elif selected_range == "Contralto":
+            self.lowest_note = Note("F3")
+            self.highest_note = Note("E5")
+        elif selected_range == "Mezzo-soprano":
+            self.lowest_note = Note("A3")
+            self.highest_note = Note("A5")
+        elif selected_range == "Soprano":
+            self.lowest_note = Note("C4")
+            self.highest_note = Note("C6")
+        elif selected_range == "Castrato":
+            self.lowest_note = Note("A3")
+            self.highest_note = Note("D6")
+        else:
+            self.lowest_note = Note("C0")
+            self.highest_note = Note("B9")
+        self.set_lowest_note(self.lowest_note)
+        self.set_highest_note(self.highest_note)
+
+    def _do_calibrate_with_voice(self):
         self.debug = True
-        self.nb_samples = 10
+        self.nb_samples = 20
         self.lowest_note = None
-        self.calibrating_lowest_note = True
-        self.calibrating_highest_note = False
-        self.progress_bar.start()
-        self.mic_analyzer.do_start_hearing()
-        # self.calibrate_lowest_button.after(10, partial(self.__calibrating, get_lowest=True))
-
-    def _do_calibrate_highest(self):
-        self.debug = True
         self.highest_note = None
-        self.nb_samples = 10
-        self.calibrating_lowest_note = False
+        self.calibrating_lowest_note = True
         self.calibrating_highest_note = True
         self.progress_bar.start()
         self.mic_analyzer.do_start_hearing()
-        # self.calibrate_lowest_button.after(10, partial(self.__calibrating, get_lowest=False))
+        # self.calibrate_lowest_button.after(10, partial(self.__calibrating, get_lowest=True))
 
     def do_play_note(self, note, octave):
         if self.debug:

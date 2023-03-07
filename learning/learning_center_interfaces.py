@@ -1,6 +1,6 @@
 import time
 from copy import deepcopy
-from tkinter import Frame, Button, Canvas, Tk
+from tkinter import Frame, Button, Canvas, Tk, LabelFrame
 from tkinter.constants import *
 
 import PIL.ImageTk
@@ -12,6 +12,7 @@ class LearningCenterInterface:
     img = Image.open("resources/checked_icon.png")
 
     def __init__(self):
+        self.exercize_labelframe = None
         self.demonstrate_thread = None
         self.blinking_running = False
         self.preview_running = False
@@ -36,15 +37,16 @@ class LearningCenterInterface:
 
     def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
-
-        self.demonstrate_button = Button(ui_root_tk, text='Hear exercise',
+        self.exercize_labelframe = LabelFrame(self.ui_root_tk, text='Your performance')
+        self.exercize_labelframe.grid(row=1, column=0)
+        self.demonstrate_button = Button(self.exercize_labelframe, text='Hear exercise',
                                          command=self.do_demonstrate_exercise, state=DISABLED)
         self.demonstrate_button.grid(row=0, column=0)
 
-        self.hear_user_button = Button(self.ui_root_tk, text='Try it...', command=self.do_hear_user, state=DISABLED)
+        self.hear_user_button = Button(self.exercize_labelframe, text='Try it...', command=self.do_hear_user, state=DISABLED)
         self.hear_user_button.grid(row=0, column=1)
 
-        self.module_path_canvas = Canvas(ui_root_tk, width=self.module_path_canvas_width,
+        self.module_path_canvas = Canvas(self.exercize_labelframe, width=self.module_path_canvas_width,
                                          height=self.module_path_canvas_height,
                                          borderwidth=1, background='white')
         self.module_path_canvas.grid(row=1, column=0, columnspan=4)

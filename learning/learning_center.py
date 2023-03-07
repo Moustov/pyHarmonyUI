@@ -18,6 +18,8 @@ class LearningCenter:
     MODULES_PATH = 'learning modules/'
 
     def __init__(self):
+        self.instrument_labelframe = None
+        self.training_module_labelframe = None
         self.transposing_labelframe = None
         self.learn_with_random_transpose = None
         self.transposed_training_module = None
@@ -41,13 +43,13 @@ class LearningCenter:
     def display(self, ui_root_tk: tkinter.Tk):
         self.ui_root_tk = ui_root_tk
 
-        self.select_module_label = Label(self.ui_root_tk, text="Select your training module")
+        self.training_module_labelframe = LabelFrame(self.ui_root_tk, text='Training modules')
+        self.training_module_labelframe.grid(row=0, column=0)
+        self.select_module_label = Label(self.training_module_labelframe, text="Select your training module")
         self.select_module_label.grid(row=0, column=0)
-
-        self.reload_button = Button(ui_root_tk, text='Reload', command=self.do_reload_exercises)
+        self.reload_button = Button(self.training_module_labelframe, text='Reload', command=self.do_reload_exercises)
         self.reload_button.grid(row=1, column=0)
-
-        self.list_of_modules = Treeview(self.ui_root_tk)
+        self.list_of_modules = Treeview(self.training_module_labelframe)
         self.list_of_modules['columns'] = ('Name', 'Description', 'Content')
         self.list_of_modules.column("#0", width=0, stretch=NO)
         self.list_of_modules.column('Name', anchor=CENTER, width=80)
@@ -62,17 +64,18 @@ class LearningCenter:
         self.list_of_modules.grid(row=2, column=0)
         self.fill_list_of_modules()
 
-        self.select_instrument_label = Label(self.ui_root_tk, text="Select your instrument")
-        self.select_instrument_label.grid(row=3, column=0)
-
+        self.instrument_labelframe = LabelFrame(self.ui_root_tk, text='Training modules')
+        self.instrument_labelframe.grid(row=1, column=0)
+        self.select_instrument_label = Label(self.instrument_labelframe, text="Select your instrument")
+        self.select_instrument_label.grid(row=1, column=0)
         self.instruments = ["Voice", "Guitar", "Piano", "Flute", "Saxophone"]
-        self.instrument_combobox = Combobox(self.ui_root_tk, values=self.instruments)
+        self.instrument_combobox = Combobox(self.instrument_labelframe, values=self.instruments)
         self.instrument_combobox.bind('<<ComboboxSelected>>', self._do_select_instrument)
         self.instrument_combobox.current(0)
-        self.instrument_combobox.grid(row=4, column=0)
+        self.instrument_combobox.grid(row=2, column=0)
         # learning params
         self.transposing_labelframe = LabelFrame(self.ui_root_tk, text='Transposing')
-        self.transposing_labelframe.grid(row=5, column=0)
+        self.transposing_labelframe.grid(row=3, column=0)
         self.transpose_scale = Scale(self.transposing_labelframe, from_=-11, to=11, tickinterval=3, length=200,
                                      orient=HORIZONTAL, command=self._do_transpose_change)
         self.transpose_scale.set(0)
@@ -201,11 +204,23 @@ class LearningCenter:
             index += 1
 
     def refresh_transpose_scale(self):
+        """
+        todo : check if [lowest note, highest note] within [note_min,  note_max] instead of first_note
+        :return:
+        """
         note_min = self.selected_instrument_training.get_lowest_note()
         note_max = self.selected_instrument_training.get_highest_note()
-        first_note = Note(self.selected_training_module["play_notes"].split("-")[0])
-        interval_min = first_note.get_interval_in_half_tones(note_min)
-        interval_max = first_note.get_interval_in_half_tones(note_max)
+        lowest_note = Note("B9")
+        highest_note = Note("C0")
+        for n in self.selected_training_module["play_notes"].split("-"):
+            the_note = Note(n)
+            if lowest_note < the_note:
+                lowest_note = the_note
+            if highest_note > the_note:
+                highest_note = the_note
+
+        interval_min = lowest_note.get_interval_in_half_tones(note_min)
+        interval_max = highest_note.get_interval_in_half_tones(note_max)
         self.transpose_scale.configure(from_=interval_min, to=interval_max,
                                        tickinterval=(interval_max - interval_min) / 11)
         self.learn_with_random_transpose.config(state="normal")
