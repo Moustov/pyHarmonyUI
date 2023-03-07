@@ -5,13 +5,20 @@ from learning.learning_center_interfaces import LearningCenterInterface
 
 class PilotableInstrument:
     def __init__(self):
-        pass
+        self.highest_note = Note("B9")
+        self.lowest_note = Note("C0")
 
     def get_lowest_note(self) -> Note:
-        return Note("C0")
+        return self.lowest_note
 
     def get_highest_note(self) -> Note:
-        return Note("B9")
+        return self.highest_note
+
+    def set_lowest_note(self, lowest_note: Note):
+        self.lowest_note = lowest_note
+
+    def set_highest_note(self, highest_note: Note):
+        self.highest_note = highest_note
 
     def clear_notes(self):
         """

@@ -113,6 +113,7 @@ class MicAnalyzer:
             if signal_power < self.POWER_THRESH:
                 os.system('cls' if os.name == 'nt' else 'clear')
                 # print("Closest note: ...")
+                self._set_current_note("-")
                 return
 
             # avoid spectral leakage by multiplying the signal with a hann window

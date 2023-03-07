@@ -26,6 +26,8 @@ class GuitarTraining(MicListener, PilotableInstrument):
 
     def __init__(self):
         super().__init__()
+        self.highest_note = Note("A#5")
+        self.lowest_note = Note("E2")
         self.status_button = None
         self.learning_center = None
         self.debug = True
@@ -191,12 +193,6 @@ class GuitarTraining(MicListener, PilotableInstrument):
         for p in pos:
             self._draw_finger_on_neck(raw_note, p[0], p[1])
 
-    def get_lowest_note(self) -> Note:
-        return Note("E2")
-
-    def get_highest_note(self) -> Note:
-        return Note("A#5")
-
     def _draw_finger_on_neck(self, note: str, the_string: str, the_fret: int):
         """
 
@@ -274,6 +270,12 @@ class GuitarTraining(MicListener, PilotableInstrument):
         if self.debug:
             print("show_note", note)
         self.change_note_visible_status(note, False)
+
+    def get_lowest_note(self) -> Note:
+        return self.lowest_note
+
+    def get_highest_note(self) -> Note:
+        return self.highest_note
 
 
 if __name__ == "__main__":

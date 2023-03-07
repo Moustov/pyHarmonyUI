@@ -16,8 +16,16 @@ class VoiceTraining(MicListener, PilotableInstrument):
     NOTE_MUTE = "#AAAAAA"
     NOTE_HEARD = "#AA8888"
     NOTE_SHOW = "#EEEEEE"
+    NOTE_DISABLED = "#222222"
 
     def __init__(self):
+        self.calibrating_highest_note = None
+        self.calibrating_lowest_note = None
+        self.nb_samples = 20
+        self.calibrate_highest_button = None
+        self.calibrate_lowest_button = None
+        self.highest_note = None
+        self.lowest_note = None
         self.debug = False
         self.learning_center = None
         #
@@ -30,9 +38,9 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.learning_thread = None
         # song data
         self.song = []
-        self.sig_up = 4     # 4 fourths in a bar
-        self.sig_down = 4   # dealing with fourths
-        self.tempo = 60     # 4th per minute
+        self.sig_up = 4  # 4 fourths in a bar
+        self.sig_down = 4  # dealing with fourths
+        self.tempo = 60  # 4th per minute
         self.chrono = None
         self.start_time = None
         self.is_listening = False
@@ -41,10 +49,27 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.learn_button = None
         self.note_player = NotePlayer()
 
+    def get_lowest_note(self) -> Note:
+        if not self.lowest_note:
+            return Note("C0")
+        return self.lowest_note
+
+    def get_highest_note(self) -> Note:
+        if not self.highest_note:
+            return Note("B9")
+        return self.highest_note
+
     def display(self, ui_root_tk: Frame):
         self.ui_root_tk = ui_root_tk
+        self.calibrate_lowest_button = Button(ui_root_tk, text=f"Calibrate\nlowest",
+                                              width=10, command=self._do_calibrate_lowest)
+        self.calibrate_lowest_button.grid(row=1, column=0)
+        self.calibrate_highest_button = Button(ui_root_tk, text=f"Calibrate\nhighest",
+                                               width=10, command=self._do_calibrate_highest)
+        self.calibrate_highest_button.grid(row=1, column=1)
+
         self.progress_bar = Progressbar(ui_root_tk, orient='horizontal', mode='indeterminate', length=280)
-        self.progress_bar.grid(row=1, column=0, columnspan=9)
+        self.progress_bar.grid(row=2, column=0, columnspan=9)
         for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
             self.notes_buttons[str(octave)] = {}
             half_tone = 0
@@ -55,7 +80,25 @@ class VoiceTraining(MicListener, PilotableInstrument):
                                                                bg=VoiceTraining.NOTE_MUTE,
                                                                width=10,
                                                                command=partial(self.do_play_note, note, octave))
-                self.notes_buttons[str(octave)][note].grid(row=2 + half_tone, column=octave, padx=5)
+                self.notes_buttons[str(octave)][note].grid(row=3 + half_tone, column=octave, padx=5)
+
+    def _do_calibrate_lowest(self):
+        self.debug = True
+        self.nb_samples = 10
+        self.lowest_note = None
+        self.calibrating_lowest_note = True
+        self.calibrating_highest_note = False
+        self.mic_analyzer.do_start_hearing()
+        # self.calibrate_lowest_button.after(10, partial(self.__calibrating, get_lowest=True))
+
+    def _do_calibrate_highest(self):
+        self.debug = True
+        self.highest_note = None
+        self.nb_samples = 10
+        self.calibrating_lowest_note = False
+        self.calibrating_highest_note = True
+        self.mic_analyzer.do_start_hearing()
+        # self.calibrate_lowest_button.after(10, partial(self.__calibrating, get_lowest=False))
 
     def do_play_note(self, note, octave):
         if self.debug:
@@ -94,19 +137,70 @@ class VoiceTraining(MicListener, PilotableInstrument):
         if self.debug:
             print("_set_current_note", new_note)
         if new_note == "-" or len(new_note) in [2, 3]:
-            now = datetime.now()
-            self.chrono = (now - self.start_time).microseconds
-            self.add_note(new_note)
+            if self.start_time:
+                now = datetime.now()
+                self.chrono = (now - self.start_time).microseconds
+                self.add_note(new_note)
             self.previous_note = self.current_note
             self.unset_current_note()
             self.current_note = new_note
             if new_note == "-":
                 self.unset_current_note()
             else:
-                accuracy = 100 - 100*abs((closest_pitch - heard_freq) / closest_pitch)
+                accuracy = 100 - 100 * abs((closest_pitch - heard_freq) / closest_pitch)
                 self._change_note_aspects(new_note, VoiceTraining.NOTE_HEARD, accuracy)
+                if self.debug:
+                    print("_set_current_note - record", new_note)
         if self.learning_center:
             self.learning_center.check_note(new_note, heard_freq, closest_pitch)
+        if self.calibrating_lowest_note:
+            if self.debug:
+                print("_set_current_note - calibrating_lowest_note", new_note)
+            if self.current_note and 2 <= len(self.current_note) <= 3:
+                if self.nb_samples > 0:
+                    self.nb_samples -= 1
+                else:
+                    self.mic_analyzer.do_stop_hearing()
+                if self.lowest_note and (Note(self.current_note) < self.lowest_note):
+                    self.set_lowest_note(Note(self.current_note))
+                if not self.lowest_note:
+                    self.set_lowest_note(Note(self.current_note))
+        if self.calibrating_highest_note:
+            if self.debug:
+                print("_set_current_note - calibrating_highest_note", new_note)
+            if self.current_note and 2 <= len(self.current_note) <= 3:
+                if self.nb_samples > 0:
+                    self.nb_samples -= 1
+                else:
+                    self.mic_analyzer.do_stop_hearing()
+                if self.highest_note and (Note(self.current_note) > self.highest_note):
+                    self.set_highest_note(Note(self.current_note))
+                if not self.highest_note:
+                    self.set_highest_note(Note(self.current_note))
+
+    def set_lowest_note(self, lowest_note: Note):
+        super().set_lowest_note(lowest_note)
+        print("set_lowest_note", lowest_note)
+        # disable lower notes
+        for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
+            for note in Note.CHROMATIC_SCALE_SHARP_BASED:
+                n = Note(f"{note}{octave}")
+                if self.get_lowest_note() <= n <= self.get_highest_note():
+                    self.notes_buttons[str(octave)][note].config(bg=VoiceTraining.NOTE_MUTE)
+                else:
+                    self.notes_buttons[str(octave)][note].config(bg=VoiceTraining.NOTE_DISABLED)
+
+    def set_highest_note(self, highest_note: Note):
+        super().set_highest_note(highest_note)
+        print("set_highest_note", highest_note)
+        # disable higher notes
+        for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
+            for note in Note.CHROMATIC_SCALE_SHARP_BASED:
+                n = Note(f"{note}{octave}")
+                if self.get_lowest_note() <= n <= self.get_highest_note():
+                    self.notes_buttons[str(octave)][note].config(bg=VoiceTraining.NOTE_MUTE)
+                else:
+                    self.notes_buttons[str(octave)][note].config(bg=VoiceTraining.NOTE_DISABLED)
 
     def unset_current_note(self):
         if self.debug:
@@ -115,12 +209,6 @@ class VoiceTraining(MicListener, PilotableInstrument):
             self._change_note_aspects(self.current_note, VoiceTraining.NOTE_MUTE)
             self.previous_note = self.current_note
             self.current_note = "-"
-
-    def get_lowest_note(self) -> Note:
-        return Note("C0")
-
-    def get_highest_note(self) -> Note:
-        return Note("B9")
 
     def _change_note_aspects(self, note: str, bg: str, accuracy: float = -1):
         """
@@ -132,7 +220,7 @@ class VoiceTraining(MicListener, PilotableInstrument):
         """
         if self.debug:
             print("Changed Note:", note, bg, self.current_note)
-        if note and len(note) in [2, 3]:     # and bg and len(bg) == 7:
+        if note and len(note) in [2, 3]:  # and bg and len(bg) == 7:
             octave = note[-1]
             the_note = note[0:len(note) - 1]
             if accuracy == -1:
