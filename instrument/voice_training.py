@@ -88,6 +88,7 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.lowest_note = None
         self.calibrating_lowest_note = True
         self.calibrating_highest_note = False
+        self.progress_bar.start()
         self.mic_analyzer.do_start_hearing()
         # self.calibrate_lowest_button.after(10, partial(self.__calibrating, get_lowest=True))
 
@@ -97,6 +98,7 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.nb_samples = 10
         self.calibrating_lowest_note = False
         self.calibrating_highest_note = True
+        self.progress_bar.start()
         self.mic_analyzer.do_start_hearing()
         # self.calibrate_lowest_button.after(10, partial(self.__calibrating, get_lowest=False))
 
@@ -161,6 +163,8 @@ class VoiceTraining(MicListener, PilotableInstrument):
                     self.nb_samples -= 1
                 else:
                     self.mic_analyzer.do_stop_hearing()
+                    self.progress_bar.stop()
+                    self.calibrating_lowest_note = None
                 if self.lowest_note and (Note(self.current_note) < self.lowest_note):
                     self.set_lowest_note(Note(self.current_note))
                 if not self.lowest_note:
@@ -173,6 +177,8 @@ class VoiceTraining(MicListener, PilotableInstrument):
                     self.nb_samples -= 1
                 else:
                     self.mic_analyzer.do_stop_hearing()
+                    self.progress_bar.stop()
+                    self.calibrating_highest_note = None
                 if self.highest_note and (Note(self.current_note) > self.highest_note):
                     self.set_highest_note(Note(self.current_note))
                 if not self.highest_note:
@@ -242,10 +248,17 @@ class VoiceTraining(MicListener, PilotableInstrument):
         for note in self.song:
             print(note[1], ":", note[0])
 
-    def clear_notes(self):
+    def clear_notes(self, with_calibration: bool = False):
         for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
             for note in Note.CHROMATIC_SCALE_SHARP_BASED:
-                self.notes_buttons[str(octave)][note].configure(bg=VoiceTraining.NOTE_MUTE, text=f"{note}{octave}")
+                if with_calibration:
+                    n = Note(f"{note}{octave}")
+                    if self.get_lowest_note() <= n <= self.get_highest_note():
+                        self.notes_buttons[str(octave)][note].config(bg=VoiceTraining.NOTE_MUTE)
+                    else:
+                        self.notes_buttons[str(octave)][note].config(bg=VoiceTraining.NOTE_DISABLED)
+                else:
+                    self.notes_buttons[str(octave)][note].configure(bg=VoiceTraining.NOTE_MUTE, text=f"{note}{octave}")
 
 
 if __name__ == "__main__":

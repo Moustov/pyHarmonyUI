@@ -257,7 +257,7 @@ class GuitarTraining(MicListener, PilotableInstrument):
                 self.fingerings_tk_id.append((oval_id, text_id))
                 self.change_note_visible_status(raw_note_name, True)
 
-    def clear_notes(self):
+    def clear_notes(self, with_calibration: bool = False):
         for n in Note.CHROMATIC_SCALE_SHARP_BASED:
             self.change_note_visible_status(n, False)
 

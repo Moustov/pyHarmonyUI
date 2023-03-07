@@ -129,7 +129,7 @@ class LearningCenterInterface:
         if self.selected_instrument_training and self.scenario:
             self.set_training_module(self.scenario)
             # self.selected_instrument_training.debug = True
-            self.selected_instrument_training.clear_notes()
+            self.selected_instrument_training.clear_notes(with_calibration=True)
             self.current_expected_note_step = 0
             for note in self.notes_sequence:
                 n = Note(note)
@@ -146,7 +146,7 @@ class LearningCenterInterface:
         if self.selected_instrument_training and self.scenario:
             # hear
             self.set_training_module(self.scenario)
-            self.selected_instrument_training.clear_notes()
+            self.selected_instrument_training.clear_notes(with_calibration=True)
             self.current_expected_note_step = 0
             self.selected_instrument_training.do_start_hearing(self)
 

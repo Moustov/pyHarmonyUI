@@ -105,7 +105,7 @@ class LearningCenter:
         random_transpose = random.randrange(interval_min, interval_max)
         self.transpose_scale.set(random_transpose)
         self._do_transpose_change(None)
-        self.selected_instrument_training.clear_notes()
+        self.selected_instrument_training.clear_notes(with_calibration=True)
         self.current_expected_note_step = 0
         self.learning_center_interface.demonstrate_step(0)
 

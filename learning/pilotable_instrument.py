@@ -20,7 +20,7 @@ class PilotableInstrument:
     def set_highest_note(self, highest_note: Note):
         self.highest_note = highest_note
 
-    def clear_notes(self):
+    def clear_notes(self, with_calibration: bool = False):
         """
         reset all notes
         :return:
