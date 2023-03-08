@@ -11,13 +11,15 @@ from pyharmonytools.harmony.note import Note
 
 from instrument.guitar_training import GuitarTraining
 from instrument.voice_training import VoiceTraining
+from learning.instrument_listener import InstrumentListener
 from learning.learning_center_interfaces import LearningCenterInterface
 
 
-class LearningCenter:
+class LearningCenter(InstrumentListener):
     MODULES_PATH = 'learning modules/'
 
     def __init__(self):
+        super().__init__()
         self.instrument_labelframe = None
         self.training_module_labelframe = None
         self.transposing_labelframe = None
@@ -64,15 +66,13 @@ class LearningCenter:
         self.list_of_modules.grid(row=2, column=0)
         self.fill_list_of_modules()
 
-        self.instrument_labelframe = LabelFrame(self.ui_root_tk, text='Training modules')
+        self.instrument_labelframe = LabelFrame(self.ui_root_tk, text='Select your instrument')
         self.instrument_labelframe.grid(row=1, column=0)
-        self.select_instrument_label = Label(self.instrument_labelframe, text="Select your instrument")
-        self.select_instrument_label.grid(row=1, column=0)
         self.instruments = ["Voice", "Guitar", "Piano", "Flute", "Saxophone"]
         self.instrument_combobox = Combobox(self.instrument_labelframe, values=self.instruments)
         self.instrument_combobox.bind('<<ComboboxSelected>>', self._do_select_instrument)
         self.instrument_combobox.current(0)
-        self.instrument_combobox.grid(row=2, column=0)
+        self.instrument_combobox.grid(row=0, column=0)
         # learning params
         self.transposing_labelframe = LabelFrame(self.ui_root_tk, text='Transposing')
         self.transposing_labelframe.grid(row=3, column=0)
@@ -93,7 +93,7 @@ class LearningCenter:
         # instrument feedback
         self.learning_scenario_frame = Frame(self.ui_root_tk)
         self.learning_scenario_frame.grid(row=0, column=1, rowspan=5)
-        self.selected_instrument_training = VoiceTraining()
+        self.selected_instrument_training = VoiceTraining(self)
         # self.selected_instrument_training.debug = True
         self.selected_instrument_training.display(self.learning_scenario_frame)
         self.learning_center_interface.set_instrument(self.selected_instrument_training)
@@ -112,6 +112,37 @@ class LearningCenter:
         self.current_expected_note_step = 0
         self.learning_center_interface.demonstrate_step(0)
 
+    def instrument_updated(self, lowest_note: Note, highest_note: Note):
+        """
+        todo : check if [lowest note, highest note] within [note_min,  note_max] instead of first_note
+        :return:
+        """
+        module_lowest_note = Note("B9")
+        module_highest_note = Note("C0")
+        if self.selected_training_module and "play_notes" in self.selected_training_module.keys():
+            for n in self.selected_training_module["play_notes"].split("-"):
+                the_note = Note(n)
+                if module_lowest_note > the_note:
+                    module_lowest_note = the_note
+                if module_highest_note < the_note:
+                    module_highest_note = the_note
+
+        interval_min = module_lowest_note.get_interval_in_half_tones(lowest_note)
+        interval_max = module_highest_note.get_interval_in_half_tones(highest_note)
+        if interval_min > 0 > interval_max:
+            raise ValueError("Module out of vocal range")
+        elif 0 < interval_min:
+            self.transpose_scale.configure(from_=interval_min, to=interval_max,
+                                           tickinterval=(interval_max - interval_min) / 11)
+        elif 0 > interval_max:
+            self.transpose_scale.configure(from_=interval_min, to=interval_max,
+                                           tickinterval=(interval_max - interval_min) / 11)
+        else:
+            self.transpose_scale.configure(from_=interval_min, to=interval_max,
+                                           tickinterval=(interval_max - interval_min) / 11)
+        self.transpose_scale.set(0)
+        self.learn_with_random_transpose.config(state="normal")
+
     def _do_transpose_change(self, event):
         transposed_value = self.transpose_scale.get()
         print(transposed_value)
@@ -127,14 +158,14 @@ class LearningCenter:
                 self.transpose_scale.set(self.previous_transposition_value)
                 Tk.update(self.ui_root_tk)
                 no_error = False
-                messagebox.showinfo("Transpose", str(ve))
-                break
+                # messagebox.showinfo("Transpose", str(ve))
+                print("Transposing Error", str(ve))
+                # break
         if no_error:
             self.transpose_scale.set(transposed_value)
             self.previous_transposition_value = transposed_value
             self.transposed_training_module["play_notes"] = "-".join(new_notes)
             self.learning_center_interface.set_training_module(self.transposed_training_module)
-            self.refresh_transpose_scale()
 
     def do_reload_exercises(self):
         self.fill_list_of_modules()
@@ -150,6 +181,8 @@ class LearningCenter:
             self.learning_center_interface.set_training_module(module_content)
             if self.selected_instrument_training and self.selected_training_module:
                 self.learn_with_random_transpose.config(state="normal")
+                self.instrument_updated(self.selected_instrument_training.get_lowest_note(),
+                                        self.selected_instrument_training.get_highest_note())
         else:
             self.do_reload_exercises()
 
@@ -159,9 +192,9 @@ class LearningCenter:
         instr = self.instrument_combobox.get()
         self.selected_instrument_training = None
         if instr == "Voice":
-            self.selected_instrument_training = VoiceTraining()
+            self.selected_instrument_training = VoiceTraining(self)
         elif instr == "Guitar":
-            self.selected_instrument_training = GuitarTraining()
+            self.selected_instrument_training = GuitarTraining(self)
         else:
             messagebox.showinfo("PyHarmony", "This instrument is not yet implemented - try 'Voice' instead")
         if self.selected_instrument_training:
@@ -169,7 +202,7 @@ class LearningCenter:
             for widgets in self.learning_scenario_frame.winfo_children():
                 widgets.destroy()
         if instr == "Voice":
-            self.selected_instrument_training = VoiceTraining()
+            self.selected_instrument_training = VoiceTraining(self)
             self.selected_instrument_training.display(self.learning_scenario_frame)
             self.selected_instrument_training.set_lowest_note(Note("C3"))
             self.selected_instrument_training.set_highest_note(Note("B5"))
@@ -181,7 +214,11 @@ class LearningCenter:
         if self.selected_instrument_training:
             self.learning_center_interface.set_instrument(self.selected_instrument_training)
         if self.selected_instrument_training and self.selected_training_module:
-            self.refresh_transpose_scale()
+            try:
+                self.instrument_updated(self.selected_instrument_training.get_lowest_note(),
+                                        self.selected_instrument_training.get_highest_note())
+            except ValueError as ve:
+                messagebox.showwarning(title="Transposition", message=str(ve))
         Tk.update(self.ui_root_tk)
 
     def fill_list_of_modules(self):
@@ -202,26 +239,4 @@ class LearningCenter:
                                             values=("** Error **", module,
                                                     str(err)))
             index += 1
-
-    def refresh_transpose_scale(self):
-        """
-        todo : check if [lowest note, highest note] within [note_min,  note_max] instead of first_note
-        :return:
-        """
-        note_min = self.selected_instrument_training.get_lowest_note()
-        note_max = self.selected_instrument_training.get_highest_note()
-        lowest_note = Note("B9")
-        highest_note = Note("C0")
-        for n in self.selected_training_module["play_notes"].split("-"):
-            the_note = Note(n)
-            if lowest_note < the_note:
-                lowest_note = the_note
-            if highest_note > the_note:
-                highest_note = the_note
-
-        interval_min = lowest_note.get_interval_in_half_tones(note_min)
-        interval_max = highest_note.get_interval_in_half_tones(note_max)
-        self.transpose_scale.configure(from_=interval_min, to=interval_max,
-                                       tickinterval=(interval_max - interval_min) / 11)
-        self.learn_with_random_transpose.config(state="normal")
 

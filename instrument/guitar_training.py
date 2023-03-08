@@ -10,6 +10,7 @@ from pyharmonytools.harmony.note import Note
 from audio.mic_analyzer import MicListener, MicAnalyzer
 # handling click on note : https://www.hashbangcode.com/article/using-events-tkinter-canvas-elements-python
 from audio.note_player import NotePlayer
+from learning.instrument_listener import InstrumentListener
 from learning.learning_center_interfaces import LearningCenterInterface
 from learning.pilotable_instrument import PilotableInstrument
 
@@ -24,7 +25,8 @@ class GuitarTraining(MicListener, PilotableInstrument):
         "F#": "#808CFD", "C#": "#9100FF", "G#": "#BC76FC", "D#": "#B8448C", "A#": "#AB677D"
     }
 
-    def __init__(self):
+    def __init__(self, instrument_listener: InstrumentListener):
+        self.instrument_listener = instrument_listener
         super().__init__()
         self.highest_note = Note("A#5")
         self.lowest_note = Note("E2")

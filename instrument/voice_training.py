@@ -1,13 +1,14 @@
 import tkinter
 from datetime import datetime
 from functools import partial
-from tkinter import Button, Frame, Radiobutton, LabelFrame
+from tkinter import Button, Frame, Radiobutton, LabelFrame, messagebox
 from tkinter.ttk import Progressbar
 
 from pyharmonytools.harmony.note import Note
 
 from audio.mic_analyzer import MicAnalyzer, MicListener
 from audio.note_player import NotePlayer
+from learning.instrument_listener import InstrumentListener
 from learning.learning_center_interfaces import LearningCenterInterface
 from learning.pilotable_instrument import PilotableInstrument
 
@@ -18,7 +19,9 @@ class VoiceTraining(MicListener, PilotableInstrument):
     NOTE_SHOW = "#EEEEEE"
     NOTE_DISABLED = "#222222"
 
-    def __init__(self):
+    def __init__(self, instrument_listener: InstrumentListener):
+        super().__init__()
+        self.instrument_listener = instrument_listener
         self.calibration_labelframe = None
         self.calibration_radio = None
         self.castrato_radio = None
@@ -83,7 +86,7 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.calibrate_button = Button(self.calibration_labelframe, text=f"Voice\nCalibration",
                                        width=10, command=self._do_calibrate_with_voice)
         self.calibrate_button.grid(row=1, column=0)
-        self.calibration_radio = Radiobutton(self.calibration_labelframe, text="Calibration",
+        self.calibration_radio = Radiobutton(self.calibration_labelframe, text="User defined",
                                              variable=self.vocal_range,
                                              value="Calibration", command=self._do_change_vocal_range)
         self.calibration_radio.grid(row=1, column=1)
@@ -148,8 +151,8 @@ class VoiceTraining(MicListener, PilotableInstrument):
             self.lowest_note = Note("G2")
             self.highest_note = Note("F4")
         elif selected_range == "Tenor":
-            self.lowest_note = Note("F3")
-            self.highest_note = Note("E5")
+            self.lowest_note = Note("B2")
+            self.highest_note = Note("A4")
         elif selected_range == "Contralto":
             self.lowest_note = Note("F3")
             self.highest_note = Note("E5")
@@ -175,6 +178,7 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.highest_note = None
         self.calibrating_lowest_note = True
         self.calibrating_highest_note = True
+        self.vocal_range.set("User defined")
         self.progress_bar.start()
         self.mic_analyzer.do_start_hearing()
         # self.calibrate_lowest_button.after(10, partial(self.__calibrating, get_lowest=True))
@@ -262,21 +266,27 @@ class VoiceTraining(MicListener, PilotableInstrument):
                     self.set_highest_note(Note(self.current_note))
 
     def set_lowest_note(self, lowest_note: Note):
-        super().set_lowest_note(lowest_note)
         print("set_lowest_note", lowest_note)
-        # disable lower notes
-        for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
-            for note in Note.CHROMATIC_SCALE_SHARP_BASED:
-                n = Note(f"{note}{octave}")
-                if self.get_lowest_note() <= n <= self.get_highest_note():
-                    self.notes_buttons[str(octave)][note].config(bg=VoiceTraining.NOTE_MUTE)
-                else:
-                    self.notes_buttons[str(octave)][note].config(bg=VoiceTraining.NOTE_DISABLED)
+        try:
+            self.instrument_listener.instrument_updated(lowest_note=lowest_note,
+                                                        highest_note=self.get_highest_note())
+            super().set_lowest_note(lowest_note)
+            self._disable_lower_and_higher_notes()
+        except ValueError as ve:
+            messagebox.showwarning("Range", "The new lowest note is not compatible with the exercise")
 
     def set_highest_note(self, highest_note: Note):
-        super().set_highest_note(highest_note)
         print("set_highest_note", highest_note)
-        # disable higher notes
+        try:
+            self.instrument_listener.instrument_updated(lowest_note=self.get_lowest_note(),
+                                                        highest_note=highest_note)
+            super().set_highest_note(highest_note)
+        except ValueError as ve:
+            messagebox.showwarning("Range", "The new highest note is not compatible with the exercise")
+        self._disable_lower_and_higher_notes()
+
+    def _disable_lower_and_higher_notes(self):
+        # disable higher & lower notes
         for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
             for note in Note.CHROMATIC_SCALE_SHARP_BASED:
                 n = Note(f"{note}{octave}")

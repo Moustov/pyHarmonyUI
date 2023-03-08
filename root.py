@@ -29,7 +29,7 @@ class RootWindow(tkinter.Tk):
 
     def _set_layout(self):
         self.title('Harmony tools')
-        self.geometry('1024x768')
+        self.geometry('1400x768')
         self._add_menu()
         self._add_content()
 
