@@ -20,6 +20,7 @@ class LearningCenter(InstrumentListener):
 
     def __init__(self):
         super().__init__()
+        self.training_module_id = 0
         self.instrument_labelframe = None
         self.training_module_labelframe = None
         self.transposing_labelframe = None
@@ -52,15 +53,17 @@ class LearningCenter(InstrumentListener):
         self.reload_button = Button(self.training_module_labelframe, text='Reload', command=self.do_reload_exercises)
         self.reload_button.grid(row=1, column=0)
         self.list_of_modules = Treeview(self.training_module_labelframe)
-        self.list_of_modules['columns'] = ('Name', 'Description', 'Content')
+        self.list_of_modules['columns'] = ('Name', 'Description', 'Content', 'Path')
         self.list_of_modules.column("#0", width=0, stretch=NO)
         self.list_of_modules.column('Name', anchor=CENTER, width=80)
         self.list_of_modules.column('Description', anchor=CENTER, width=80)
         self.list_of_modules.column('Content', anchor=CENTER, width=80)
+        self.list_of_modules.column('Path', anchor=CENTER, width=0)
         self.list_of_modules.heading("#0", text="", anchor=CENTER)
         self.list_of_modules.heading('Name', text="Name", anchor=CENTER)
         self.list_of_modules.heading('Description', text="Description", anchor=CENTER)
         self.list_of_modules.heading('Content', text="Content", anchor=CENTER)
+        self.list_of_modules.heading('Path', text="Path", anchor=CENTER)
         # http://tkinter.fdex.eu/doc/event.html#events
         self.list_of_modules.bind("<ButtonRelease-1>", self._do_module_select)
         self.list_of_modules.grid(row=2, column=0)
@@ -172,9 +175,9 @@ class LearningCenter(InstrumentListener):
 
     def _do_module_select(self, event):
         item = self.list_of_modules.item(self.list_of_modules.selection())['values']
-        if item:
+        if item and item[1]:
             self.transpose_scale.set(0)
-            f = open(f"{LearningCenter.MODULES_PATH}{item[0]}.json")
+            f = open(f"{item[3]}/{item[0]}.json")
             module_content = json.load(f)
             f.close()
             self.selected_training_module = module_content
@@ -183,8 +186,6 @@ class LearningCenter(InstrumentListener):
                 self.learn_with_random_transpose.config(state="normal")
                 self.instrument_updated(self.selected_instrument_training.get_lowest_note(),
                                         self.selected_instrument_training.get_highest_note())
-        else:
-            self.do_reload_exercises()
 
     def _do_select_instrument(self, event):
         # "Voice", "Guitar", "Piano", "Flute", "Saxophone"
@@ -224,19 +225,31 @@ class LearningCenter(InstrumentListener):
     def fill_list_of_modules(self):
         for item in self.list_of_modules.get_children():
             self.list_of_modules.delete(item)
-        modules = os.listdir(LearningCenter.MODULES_PATH)
-        index = 0
-        for module in modules:
-            try:
-                f = open(LearningCenter.MODULES_PATH + module)
-                module_content = json.load(f)
-                f.close()
-                self.list_of_modules.insert(parent="", index='end', iid=index, text="",
-                                            values=(module_content["name"], module_content["description"],
-                                                    module_content["play_notes"]))
-            except Exception as err:
-                self.list_of_modules.insert(parent="", index='end', iid=index, text="",
-                                            values=("** Error **", module,
-                                                    str(err)))
-            index += 1
+        self.training_module_id = 0
+        self.fill_list_of_modules_folder("", LearningCenter.MODULES_PATH)
+        self.list_of_modules.tag_configure("folder", background='orange')
 
+    def fill_list_of_modules_folder(self, parent, path: str):
+        modules = os.listdir(path)
+        for module in modules:
+            abspath = path + "/" + module
+            if module.endswith("json"):
+                try:
+                    f = open(abspath)
+                    module_content = json.load(f)
+                    f.close()
+                    oid = self.list_of_modules.insert(parent=parent, index='end', iid=self.training_module_id, text="",
+                                                      values=(module_content["name"], module_content["description"],
+                                                              module_content["play_notes"], path),
+                                                      tags="module")
+                    self.training_module_id += 1
+                except Exception as err:
+                    oid = self.list_of_modules.insert(parent=parent, index='end', iid=self.training_module_id, text="",
+                                                      values=(module, "** error **", str(err)), tags="module")
+                    self.training_module_id += 1
+            else:
+                oid = self.list_of_modules.insert(parent=parent, index='end', iid=self.training_module_id, text="",
+                                                  values=(module, "", "", abspath),
+                                                  tags="folder")
+                self.training_module_id += 1
+                self.fill_list_of_modules_folder(oid, abspath)
