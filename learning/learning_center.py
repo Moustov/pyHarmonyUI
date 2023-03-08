@@ -207,7 +207,7 @@ class LearningCenter(InstrumentListener):
             self.selected_instrument_training.set_lowest_note(Note("C3"))
             self.selected_instrument_training.set_highest_note(Note("B5"))
         elif instr == "Guitar":
-            self.selected_instrument_training = GuitarTraining()
+            self.selected_instrument_training = GuitarTraining(self)
             self.selected_instrument_training.display(self.learning_scenario_frame)
         else:
             messagebox.showinfo("PyHarmony", "This instrument is not yet implemented - try 'Voice' instead")
