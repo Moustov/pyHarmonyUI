@@ -32,6 +32,10 @@ Based on [PyHarmonyToolings](https://github.com/Moustov/pyharmonytooling)
 * Find chords from tabs
 
 # Release Notes
+* 09/MAR/23
+  * v0.2
+  * learning center with transposition
+  * learning modules gathered by folder
 * 03/MAR/23
   * learning center with voice & guitar feedback
 * 27/FEB/23

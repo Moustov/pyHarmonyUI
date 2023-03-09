@@ -30,9 +30,9 @@ def int_or_str(text):
 
 
 class CaptureSoundFFT:
-    MAX_AMPLITUDE = 400
+    MAX_AMPLITUDE = 110
     MIN_FREQ = 20
-    SOUND_LEVEL_MIN = 10
+    SOUND_LEVEL_MIN = 5
     CALIBRATION_FREQ = 12.97535212
     NB_PEAKS = 6
 
