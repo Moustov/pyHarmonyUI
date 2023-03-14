@@ -14,7 +14,7 @@ Based on [PyHarmonyToolings](https://github.com/Moustov/pyharmonytooling)
 * copy files on your HDD
 * Run 
         
-        python root.py
+        python pyharmony.py
 
 # Features
 ## Audio features
