@@ -212,18 +212,38 @@ class GuitarTraining(MicListener, PilotableInstrument):
         width = self.fretboard_width
         # print("canvas", height, width)
         self.string_interval_size = (height + self.margin_N) / self.MAX_STRING
+        fret_marker_color = "#999999"
+        fret_marker_size = 15
         for fret in range(0, self.MAX_FRET):
             self.fretboard.create_line(self.margin_W + fret * width / self.MAX_FRET, self.margin_N,
                                        self.margin_W + fret * width / self.MAX_FRET,
                                        self.margin_N + (self.MAX_STRING - 1) * self.string_interval_size,
                                        fill="lightgray", width=1)
+            if fret in [3, 5, 7, 9, 12]:
+                middle_fret_x = ((self.margin_W + fret * width / self.MAX_FRET)
+                                 + (self.margin_W + (fret+1) * width / self.MAX_FRET)) / 2 - fret_marker_size/2
+                middle_neck_y = self.fretboard_height / 2 - fret_marker_size/2
+                if fret in [3, 5, 9]:
+                    self.fretboard.create_oval(middle_fret_x, middle_neck_y, middle_fret_x + fret_marker_size,
+                                               middle_neck_y + fret_marker_size,
+                                               fill=fret_marker_color, outline=fret_marker_color, width=1)
+                elif fret in [7, 12]:
+                    self.fretboard.create_oval(middle_fret_x, middle_neck_y - self.string_interval_size,
+                                               middle_fret_x + fret_marker_size,
+                                               middle_neck_y - self.string_interval_size + fret_marker_size,
+                                               fill=fret_marker_color, outline=fret_marker_color, width=3)
+                    self.fretboard.create_oval(middle_fret_x, middle_neck_y + self.string_interval_size,
+                                               middle_fret_x + fret_marker_size,
+                                               middle_neck_y + self.string_interval_size + fret_marker_size,
+                                               fill=fret_marker_color, outline=fret_marker_color, width=3)
         for string in range(0, self.MAX_STRING):
             self.fretboard.create_line(self.margin_W, self.margin_N + string * self.string_interval_size,
                                        width, self.margin_N + string * self.string_interval_size,
                                        fill="darkgray", width=2)
         # nut
-        self.fretboard.create_line(self.margin_W + 10, self.margin_N,
-                                   self.margin_W + 10, self.margin_N + (self.MAX_STRING - 1) * self.string_interval_size,
+        self.fretboard.create_line(self.margin_W + 5, self.margin_N,
+                                   self.margin_W + 5,
+                                   self.margin_N + (self.MAX_STRING - 1) * self.string_interval_size,
                                    fill="lightgray", width=10)
         # string names
         string_id = 5
@@ -246,7 +266,8 @@ class GuitarTraining(MicListener, PilotableInstrument):
                 octave = self.guitar_neck.octave[note][the_fret]
                 note_color = self.note_colors[raw_note_name]
                 if 'b' in raw_note_name:
-                    raw_note_name = Note.CHROMATIC_SCALE_SHARP_BASED[Note.CHROMATIC_SCALE_FLAT_BASED.index(raw_note_name)]
+                    raw_note_name = Note.CHROMATIC_SCALE_SHARP_BASED[
+                        Note.CHROMATIC_SCALE_FLAT_BASED.index(raw_note_name)]
                 tags = (raw_note_name, octave, raw_note_name + str(self.guitar_neck.octave[note][the_fret]))
                 oval_id = self.fretboard.create_oval(nw_x, nw_y, se_x, se_y, fill=note_color,
                                                      outline=note_color, width=1, tags=tags)
