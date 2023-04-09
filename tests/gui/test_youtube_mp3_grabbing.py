@@ -2,12 +2,10 @@ import os
 import threading
 from unittest import TestCase
 
-import pyautogui as gui
 import time
 
-from file_capabilities.download_mp3_youtube import DownloadMP3Youtube
 from pyharmony import RootWindow
-from tests.gui.youtube_mp3_grabbing_frame import YoutubeMp3GrabbingFrame
+from tests.gui.page_objects.youtube_mp3_grabbing_frame import YoutubeMp3GrabbingFrame
 
 
 class TestYoutubeMp3Grabbing(TestCase):
@@ -27,8 +25,7 @@ class TestYoutubeMp3Grabbing(TestCase):
         self.youtube_frame.click_button_download_mp3_from_url()
         print("output file:" + self.app.record_youtube.out_file)
         # TEST
-        is_file_present = os.path.isfile(self.app.record_youtube.out_file)
-        assert is_file_present
+        assert os.path.isfile(self.app.record_youtube.out_file)
 
     def tearDown(self):
         # test_youtube_mp3_grabbing
