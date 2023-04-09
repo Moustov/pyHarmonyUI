@@ -1,6 +1,6 @@
 import threading
 import tkinter
-from tkinter import Label, Entry, Button, END
+from tkinter import Label, Entry, Button, END, Frame
 from tkinter.ttk import Progressbar
 
 from pytube import YouTube
@@ -9,6 +9,7 @@ import os
 
 class DownloadMP3Youtube(tkinter.Tk):
     def __init__(self):
+        self.frame = None
         self.list_of_songs = None
         self.song = None
         self.youtube_url = None
@@ -16,16 +17,19 @@ class DownloadMP3Youtube(tkinter.Tk):
         self.search_button = None
         self.progress_bar = None
 
-    def display(self, root: tkinter.Tk):
-        self.url_label = Label(root, text="Youtube URL to download")
+    # def display(self, root: tkinter.Tk):
+    def get_ui_frame(self, root: tkinter.Tk) -> Frame:
+        self.frame = Frame(root)
+        self.url_label = Label(self.frame, text="Youtube URL to download")
         self.url_label.pack()
-        self.youtube_url = Entry(root)
+        self.youtube_url = Entry(self.frame)
         self.youtube_url.pack()
-        self.search_button = Button(root, text='Search', command=self._do_download_mp3_from_url)
+        self.search_button = Button(self.frame, text='Search', command=self._do_download_mp3_from_url)
         self.search_button.pack()
 
-        self.progress_bar = Progressbar(root, orient='horizontal', mode='indeterminate', length=280)
+        self.progress_bar = Progressbar(self.frame, orient='horizontal', mode='indeterminate', length=280)
         self.progress_bar.pack()
+        return self.frame
 
     def _do_download_mp3_from_url(self):
         download_thread = threading.Thread(target=self._download_mp3, name="_download_songs")

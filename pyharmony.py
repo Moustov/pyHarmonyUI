@@ -6,10 +6,8 @@ from tkinter.filedialog import askopenfilename
 
 from audio.capture_sound_fft import CaptureSoundFFT
 from audio.capture_sound_plot import capture_and_display_sound
-from instrument.guitar_training import GuitarTraining
-from learning.learning_center import LearningCenter
 from file_capabilities.download_mp3_youtube import DownloadMP3Youtube
-from instrument.voice_training import VoiceTraining
+from learning.learning_center import LearningCenter
 from ultimate_guitar.search_cadence import SearchSongFromCadence
 from ultimate_guitar.search_chords import SearchSongFromChords
 
@@ -21,11 +19,13 @@ from ultimate_guitar.search_chords import SearchSongFromChords
 class RootWindow(tkinter.Tk):
     def __init__(self):
         super().__init__()
+        self.learning_center = None
         self.search_chords = None
         self.search_cadence = None
         self.live_hearing = None
         self.menu_bar = None
         self._set_layout()
+        self.record_youtube = None
 
     def _set_layout(self):
         self.title('Harmony tools')
@@ -35,12 +35,15 @@ class RootWindow(tkinter.Tk):
 
     def _add_content(self):
         my_label = Label(self, text="Harmony tools")
-        my_label.pack()
+        my_label.grid(row=0, column=0)
 
     def _add_menu(self):
         """
         https://koor.fr/Python/Tutoriel_Tkinter/tkinter_menu.wp
+        https://tkdocs.com/tutorial/menus.html
         :return:
+        todo short cuts : m_edit.entryconfigure('Paste', accelerator='Command+V')
+        todo underline : m.add_command(label='Path Browser', underline=5)  # underline "B"
         """
         self.menu_bar = Menu(self)
 
@@ -74,10 +77,10 @@ class RootWindow(tkinter.Tk):
         self.config(menu=self.menu_bar)
 
     def do_learning_center(self):
-        lc = LearningCenter()
-        f = Frame()
-        f.pack()
-        lc.display(f)
+        self.clear_root()
+        self.learning_center = LearningCenter()
+        frame = self.learning_center.get_ui_frame(self)
+        frame.grid(row=1, column=0, columnspan=5, sticky='nsew', padx=5, pady=5)
 
     def do_FFT_hearing(self):
         c = CaptureSoundFFT()
@@ -87,10 +90,10 @@ class RootWindow(tkinter.Tk):
         capture_and_display_sound()
 
     def do_youtube_mp3_grabbing(self):
-        d = DownloadMP3Youtube()
-        f = Frame()
-        f.pack()
-        d.display(f)
+        self.clear_root()
+        self.record_youtube = DownloadMP3Youtube()
+        frame = self.record_youtube.get_ui_frame(self)
+        frame.grid(row=1, column=0, columnspan=5, sticky='nsew', padx=5, pady=5)
 
     def do_about(self):
         messagebox.showinfo("Harmony tools", f"(c) C. Moustier - 2023\nBased on pyHarmonyTooling v.{version('pyHarmonyTooling')} - https://github.com/Moustov/pyharmonytooling")
@@ -104,18 +107,28 @@ class RootWindow(tkinter.Tk):
         messagebox.showinfo("Harmony tools", f"Not yet implemented :-P")
 
     def do_search_chords(self):
-        f = Frame()
-        f.pack()
-        if not self.search_chords:
-            self.search_chords = SearchSongFromChords()
-        self.search_chords.display(f)
+        self.clear_root()
+        self.search_chords = SearchSongFromChords()
+        frame = self.search_chords.get_ui_frame(self)
+        frame.grid(row=1, column=0, columnspan=5, sticky='nsew', padx=5, pady=5)
 
     def do_search_cadence(self):
-        f = Frame()
-        f.pack()
-        if not self.search_cadence:
-            self.search_cadence = SearchSongFromCadence()
-        self.search_cadence.display(f)
+        self.clear_root()
+        self.search_cadence = SearchSongFromCadence()
+        frame = self.search_cadence.get_ui_frame(self)
+        frame.grid(row=1, column=0, columnspan=5, sticky='nsew', padx=5, pady=5)
+
+    def clear_root(self):
+        if self.record_youtube:
+            self.record_youtube.frame.grid_remove()
+        if self.learning_center:
+            self.learning_center.frame.grid_remove()
+        if self.search_chords:
+            self.search_chords.frame.grid_remove()
+        if self.search_cadence:
+            self.search_cadence.frame.grid_remove()
+
+
 
 
 if __name__ == "__main__":

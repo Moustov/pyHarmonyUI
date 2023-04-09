@@ -20,6 +20,7 @@ class LearningCenter(InstrumentListener):
 
     def __init__(self):
         super().__init__()
+        self.frame = None
         self.training_module_id = 0
         self.instrument_labelframe = None
         self.training_module_labelframe = None
@@ -43,10 +44,10 @@ class LearningCenter(InstrumentListener):
         self.ui_root_tk = None
         self.selected_training_module = None
 
-    def display(self, ui_root_tk: tkinter.Tk):
-        self.ui_root_tk = ui_root_tk
+    def get_ui_frame(self, root: tkinter.Tk) -> Frame:
+        self.frame = Frame(root)
 
-        self.training_module_labelframe = LabelFrame(self.ui_root_tk, text='Training modules')
+        self.training_module_labelframe = LabelFrame(self.frame, text='Training modules')
         self.training_module_labelframe.grid(row=0, column=0)
         self.select_module_label = Label(self.training_module_labelframe, text="Select your training module")
         self.select_module_label.grid(row=0, column=0)
@@ -69,7 +70,7 @@ class LearningCenter(InstrumentListener):
         self.list_of_modules.grid(row=2, column=0)
         self.fill_list_of_modules()
 
-        self.instrument_labelframe = LabelFrame(self.ui_root_tk, text='Select your instrument')
+        self.instrument_labelframe = LabelFrame(self.frame, text='Select your instrument')
         self.instrument_labelframe.grid(row=1, column=0)
         self.instruments = ["Voice", "Guitar", "Piano", "Flute", "Saxophone"]
         self.instrument_combobox = Combobox(self.instrument_labelframe, values=self.instruments)
@@ -77,7 +78,7 @@ class LearningCenter(InstrumentListener):
         self.instrument_combobox.current(0)
         self.instrument_combobox.grid(row=0, column=0)
         # learning params
-        self.transposing_labelframe = LabelFrame(self.ui_root_tk, text='Transposing')
+        self.transposing_labelframe = LabelFrame(self.frame, text='Transposing')
         self.transposing_labelframe.grid(row=3, column=0)
         self.transpose_scale = Scale(self.transposing_labelframe, from_=-11, to=11, tickinterval=3, length=200,
                                      orient=HORIZONTAL, command=self._do_transpose_change)
@@ -89,17 +90,18 @@ class LearningCenter(InstrumentListener):
                                                   state="disabled")
         self.learn_with_random_transpose.grid(row=0, column=1)
         # learning feedback
-        self.learning_status_frame = Frame(self.ui_root_tk)
+        self.learning_status_frame = Frame(self.frame)
         self.learning_status_frame.grid(row=6, column=1, columnspan=2)
         self.learning_center_interface = LearningCenterInterface()
         self.learning_center_interface.display(self.learning_status_frame)
         # instrument feedback
-        self.learning_scenario_frame = Frame(self.ui_root_tk)
+        self.learning_scenario_frame = Frame(self.frame)
         self.learning_scenario_frame.grid(row=0, column=1, rowspan=5)
         self.selected_instrument_training = VoiceTraining(self)
         # self.selected_instrument_training.debug = True
         self.selected_instrument_training.display(self.learning_scenario_frame)
         self.learning_center_interface.set_instrument(self.selected_instrument_training)
+        return self.frame
 
     def _do_exercize_random_transpose(self):
         note_min = self.selected_instrument_training.get_lowest_note()

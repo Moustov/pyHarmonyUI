@@ -19,18 +19,19 @@ class SearchSongFromCadence(tkinter.Tk):
         self.progress_bar = None
         self.ug_engine = UltimateGuitarSearch()
 
-    def display(self, root: tkinter.Tk):
-        self.pattern_label = Label(root, text="Cadence to search")
+    def get_ui_frame(self, root: tkinter.Tk) -> Frame:
+        self.frame = Frame(root)
+        self.pattern_label = Label(self.frame, text="Cadence to search")
         self.pattern_label.pack()
-        self.pattern = Entry(root)
+        self.pattern = Entry(self.frame)
         self.pattern.pack()
-        self.search_button = Button(root, text='Search', command=self._do_search_songs)
+        self.search_button = Button(self.frame, text='Search', command=self._do_search_songs)
         self.search_button.pack()
 
-        self.progress_bar = Progressbar(root, orient='horizontal', mode='indeterminate', length=280)
+        self.progress_bar = Progressbar(self.frame, orient='horizontal', mode='indeterminate', length=280)
         self.progress_bar.pack()
 
-        self.list_of_songs = Treeview(root)
+        self.list_of_songs = Treeview(self.frame)
         self.list_of_songs['columns'] = ('Sequence', 'Author', 'Title', 'URL')
         self.list_of_songs.column("#0", width=0, stretch=NO)
         self.list_of_songs.column('Sequence', anchor=CENTER, width=80)
@@ -47,8 +48,9 @@ class SearchSongFromCadence(tkinter.Tk):
         self.list_of_songs.bind("<ButtonRelease-1>", self._on_song_select)
         self.list_of_songs.pack()
 
-        self.song = Text(root)
+        self.song = Text(self.frame)
         self.song.pack()
+        return self.frame
 
     def _do_search_songs(self):
         download_thread = threading.Thread(target=self._download_songs, name="_download_songs")

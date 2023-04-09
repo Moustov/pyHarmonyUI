@@ -8,3 +8,4 @@ wheel~=0.38
 sounddevice~=0.4
 pytube~=12.1
 pygame~=2.2
+pyautogui==0.9.53
