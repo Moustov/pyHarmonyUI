@@ -16,6 +16,7 @@ class SearchSongFromChords(tkinter.Tk):
         self.search_button = None
         self.progress_bar = None
         self.ug_engine = UltimateGuitarSearch()
+        self.download_thread = None
 
     def get_ui_frame(self, root: tkinter.Tk) -> Frame:
         self.frame = Frame(root)
@@ -27,7 +28,7 @@ class SearchSongFromChords(tkinter.Tk):
         self.progress_bar = Progressbar(self.frame, orient='horizontal', mode='indeterminate', length=280)
         self.progress_bar.pack()
 
-        self.search_button = Button(self.frame,text='Search', command=self._do_search_songs)
+        self.search_button = Button(self.frame, text='Search', command=self.do_search_songs)
         self.search_button.pack()
         self.list_of_songs = Treeview(self.frame)
         self.list_of_songs['columns'] = ('Author', 'Title', 'URL')
@@ -48,9 +49,9 @@ class SearchSongFromChords(tkinter.Tk):
         self.song.pack()
         return self.frame
 
-    def _do_search_songs(self):
-        download_thread = threading.Thread(target=self._download_songs, name="_download_songs")
-        download_thread.start()
+    def do_search_songs(self):
+        self.download_thread = threading.Thread(target=self._download_songs, name="_download_songs")
+        self.download_thread.start()
 
     def _download_songs(self):
         self.progress_bar.start()
