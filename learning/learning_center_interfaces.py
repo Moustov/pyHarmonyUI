@@ -68,6 +68,8 @@ class LearningCenterInterface:
         if self.selected_instrument_training and self.scenario:
             self.hear_user_button.config(state=NORMAL)
         self.notes_sequence = self.scenario["play_notes"].split("-")
+        # silences removed  # todo introduce notes & rests durations in the exercices
+        self.notes_sequence = list(filter(None, self.notes_sequence))
         self.module_path_canvas.delete("all")
         note_width = 20
         margin_W = 20

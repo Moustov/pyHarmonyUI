@@ -1,4 +1,6 @@
+import json
 import tkinter
+from datetime import datetime
 from tkinter import Frame, LabelFrame, messagebox, Tk, Button
 from tkinter.constants import *
 from tkinter.ttk import Combobox
@@ -64,14 +66,27 @@ class NoteRecorder(InstrumentListener, mtkEditTableListener):
         self.notes_treeview.column('Duration', anchor=CENTER, width=0, stretch=YES)
         self.notes_treeview.grid(row=0, column=0, columnspan=2, ipadx=200, padx=5, pady=5)
         self.notes_treeview.column("#0", width=70, stretch=NO)
-
         return self.frame
+
+    def do_save_score(self):
+        score = []
+        previous_note = ""
+        for note in self.selected_instrument.song:
+            if previous_note != note[0]:
+                score.append(note[0])
+                previous_note = note[0]
+        score_file_name = str(datetime.now()).replace(":", "-")
+        file_content = {"name": score_file_name, "description": "recorded notes", "play_notes": "-".join(score), "next possible": ""}
+        with open(score_file_name + ".json", "w", encoding='utf-8') as file:
+            json.dump(file_content, file, indent=4, ensure_ascii=False)
+        print(f"Saved to {score_file_name}")
 
     def do_start_recording(self):
         self.selected_instrument.do_start_hearing(None)
 
     def do_stop_recording(self):
         self.selected_instrument.do_stop_hearing()
+        self.do_save_score()
 
     def _do_select_instrument(self, event):
         """
