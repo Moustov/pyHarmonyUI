@@ -1,9 +1,7 @@
-import os
 from unittest import TestCase
 
 from tests.gui.page_objects.root_window_frame import RootWindowFrame
 from tests.gui.page_objects.search_chords_frame import SearchChordsFrame
-from tests.gui.page_objects.youtube_mp3_grabbing_frame import YoutubeMp3GrabbingFrame
 
 
 class TestSearchChords(TestCase):
