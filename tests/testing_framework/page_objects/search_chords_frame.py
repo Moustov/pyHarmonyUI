@@ -1,6 +1,6 @@
 from tkinter.constants import *
 
-from tests.gui.page_objects.root_window_frame import RootWindowFrame
+from tests.testing_framework.page_objects.root_window_frame import RootWindowFrame
 
 
 class SearchChordsFrame:

@@ -3,7 +3,7 @@ UI Automation Testing
 
 # Page Object Model
 The POM pattern is used in UI automation
-* refer/create to an existing UI accessor in [tests/gui/page_objects](tests/gui/page_objects)
+* refer/create to an existing UI accessor in [tests/gui/page_objects](tests/testing_framework/page_objects)
 * generate tests as unit tests with scenarios in [tests/gui](tests/gui) involving UI accessors
 
 # Further Readings

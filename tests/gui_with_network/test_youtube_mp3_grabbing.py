@@ -1,8 +1,8 @@
 import os
 from unittest import TestCase
 
-from tests.gui.page_objects.root_window_frame import RootWindowFrame
-from tests.gui.page_objects.youtube_mp3_grabbing_frame import YoutubeMp3GrabbingFrame
+from tests.testing_framework.page_objects.root_window_frame import RootWindowFrame
+from tests.testing_framework.page_objects.youtube_mp3_grabbing_frame import YoutubeMp3GrabbingFrame
 
 
 class TestYoutubeMp3Grabbing(TestCase):

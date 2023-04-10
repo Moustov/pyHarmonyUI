@@ -1,8 +1,7 @@
 from unittest import TestCase
 
-from tests.gui.page_objects.root_window_frame import RootWindowFrame
-from tests.gui.page_objects.search_cadence_frame import SearchCadenceFrame
-from tests.gui.page_objects.search_chords_frame import SearchChordsFrame
+from tests.testing_framework.page_objects.root_window_frame import RootWindowFrame
+from tests.testing_framework.page_objects.search_cadence_frame import SearchCadenceFrame
 
 
 class TestSearchCadence(TestCase):
