@@ -2,7 +2,6 @@ from unittest import TestCase
 
 from tests.testing_framework.page_objects.note_recorder_frame import NoteRecorderFrame
 from tests.testing_framework.page_objects.root_window_frame import RootWindowFrame
-from tests.testing_framework.page_objects.search_cadence_frame import SearchCadenceFrame
 
 
 class TestNoteRecorder(TestCase):
