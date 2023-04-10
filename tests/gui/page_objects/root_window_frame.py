@@ -49,3 +49,5 @@ class RootWindowFrame:
     def open_search_chords_frame(self):
         self.app.do_search_chords()
 
+    def open_search_cadence_frame(self):
+        self.app.do_search_cadence()

@@ -13,7 +13,7 @@ class TestSearchChords(TestCase):
         self.root_window_frame.open()
         self.root_window_frame.open_search_chords_frame()
 
-    def test_youtube_mp3_grabbing(self):
+    def test_search_song_from_chords(self):
         # SETUP
         self.search_chords_frame = SearchChordsFrame(self.root_window_frame)
         self.search_chords_frame.display_frame()
