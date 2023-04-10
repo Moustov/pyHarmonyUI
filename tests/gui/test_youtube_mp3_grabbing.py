@@ -30,6 +30,8 @@ class TestYoutubeMp3Grabbing(TestCase):
             os.remove(self.root_window_frame.get_out_file())
         except FileNotFoundError:
             pass
+        except Exception as ex:
+            print("Issue found in tearDown - " + str(ex))
         # killing root window
         self.root_window_frame.quit()
 
