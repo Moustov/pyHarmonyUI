@@ -75,8 +75,10 @@ class NoteRecorder(InstrumentListener, mtkEditTableListener):
             if previous_note != note[0]:
                 score.append(note[0])
                 previous_note = note[0]
-        score_file_name = str(datetime.now()).replace(":", "-")
-        file_content = {"name": score_file_name, "description": "recorded notes", "play_notes": "-".join(score), "next possible": ""}
+        score_file_name = "learning modules/songs/" + str(datetime.now()).replace(":", "-")
+        # todo take rests & durations into account
+        file_content = {"name": score_file_name, "description": "recorded notes", "play_notes": "-".join(score),
+                        "next possible": ""}
         with open(score_file_name + ".json", "w", encoding='utf-8') as file:
             json.dump(file_content, file, indent=4, ensure_ascii=False)
         print(f"Saved to {score_file_name}")
