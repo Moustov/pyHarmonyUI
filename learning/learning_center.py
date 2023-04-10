@@ -20,9 +20,10 @@ class LearningCenter(InstrumentListener):
 
     def __init__(self):
         super().__init__()
+        self.instrument_labelframe = None
         self.frame = None
         self.training_module_id = 0
-        self.instrument_labelframe = None
+        self.instrument_selector_labelframe = None
         self.training_module_labelframe = None
         self.transposing_labelframe = None
         self.learn_with_random_transpose = None
@@ -46,7 +47,7 @@ class LearningCenter(InstrumentListener):
 
     def get_ui_frame(self, root: tkinter.Tk) -> Frame:
         self.frame = Frame(root)
-
+        self.ui_root_tk = root
         self.training_module_labelframe = LabelFrame(self.frame, text='Training modules')
         self.training_module_labelframe.grid(row=0, column=0)
         self.select_module_label = Label(self.training_module_labelframe, text="Select your training module")
@@ -70,10 +71,10 @@ class LearningCenter(InstrumentListener):
         self.list_of_modules.grid(row=2, column=0)
         self.fill_list_of_modules()
 
-        self.instrument_labelframe = LabelFrame(self.frame, text='Select your instrument')
-        self.instrument_labelframe.grid(row=1, column=0)
+        self.instrument_selector_labelframe = LabelFrame(self.frame, text='Select your instrument')
+        self.instrument_selector_labelframe.grid(row=1, column=0)
         self.instruments = ["Voice", "Guitar", "Piano", "Flute", "Saxophone"]
-        self.instrument_combobox = Combobox(self.instrument_labelframe, values=self.instruments)
+        self.instrument_combobox = Combobox(self.instrument_selector_labelframe, values=self.instruments)
         self.instrument_combobox.bind('<<ComboboxSelected>>', self._do_select_instrument)
         self.instrument_combobox.current(0)
         self.instrument_combobox.grid(row=0, column=0)
@@ -95,11 +96,9 @@ class LearningCenter(InstrumentListener):
         self.learning_center_interface = LearningCenterInterface()
         self.learning_center_interface.display(self.learning_status_frame)
         # instrument feedback
-        self.learning_scenario_frame = Frame(self.frame)
-        self.learning_scenario_frame.grid(row=0, column=1, rowspan=5)
         self.selected_instrument_training = VoiceTraining(self)
-        # self.selected_instrument_training.debug = True
-        self.selected_instrument_training.display(self.learning_scenario_frame)
+        self.instrument_labelframe = self.selected_instrument_training.get_ui_frame(self.frame)
+        self.instrument_labelframe.grid(row=0, column=1, rowspan=5)
         self.learning_center_interface.set_instrument(self.selected_instrument_training)
         return self.frame
 
@@ -190,6 +189,11 @@ class LearningCenter(InstrumentListener):
                                         self.selected_instrument_training.get_highest_note())
 
     def _do_select_instrument(self, event):
+        """
+        todo refactor code to avoid duplication in [note_recorder.py](note_recorder.py)
+        :param event:
+        :return:
+        """
         # "Voice", "Guitar", "Piano", "Flute", "Saxophone"
         # select instrument
         instr = self.instrument_combobox.get()
@@ -200,18 +204,20 @@ class LearningCenter(InstrumentListener):
             self.selected_instrument_training = GuitarTraining(self)
         else:
             messagebox.showinfo("PyHarmony", "This instrument is not yet implemented - try 'Voice' instead")
-        if self.selected_instrument_training:
+        if self.instrument_labelframe:
             self.learning_center_interface.set_instrument(self.selected_instrument_training)
-            for widgets in self.learning_scenario_frame.winfo_children():
+            for widgets in self.instrument_labelframe.winfo_children():
                 widgets.destroy()
         if instr == "Voice":
             self.selected_instrument_training = VoiceTraining(self)
-            self.selected_instrument_training.display(self.learning_scenario_frame)
-            self.selected_instrument_training.set_lowest_note(Note("C3"))
-            self.selected_instrument_training.set_highest_note(Note("B5"))
+            self.instrument_labelframe = self.selected_instrument_training.get_ui_frame(self.frame)
+            self.instrument_labelframe.grid(row=0, column=1, rowspan=5)
+            # self.selected_instrument_training.set_lowest_note(Note("C3"))
+            # self.selected_instrument_training.set_highest_note(Note("B5"))
         elif instr == "Guitar":
             self.selected_instrument_training = GuitarTraining(self)
-            self.selected_instrument_training.display(self.learning_scenario_frame)
+            self.instrument_labelframe = self.selected_instrument_training.get_ui_frame(self.frame)
+            self.instrument_labelframe.grid(row=0, column=1, rowspan=5)
         else:
             messagebox.showinfo("PyHarmony", "This instrument is not yet implemented - try 'Voice' instead")
         if self.selected_instrument_training:

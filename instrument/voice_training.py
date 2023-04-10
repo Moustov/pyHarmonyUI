@@ -21,6 +21,7 @@ class VoiceTraining(MicListener, PilotableInstrument):
 
     def __init__(self, instrument_listener: InstrumentListener):
         super().__init__()
+        self.frame = None
         self.instrument_listener = instrument_listener
         self.calibration_labelframe = None
         self.calibration_radio = None
@@ -75,10 +76,11 @@ class VoiceTraining(MicListener, PilotableInstrument):
             return Note("B9")
         return self.highest_note
 
-    def display(self, ui_root_tk: Frame):
+    def get_ui_frame(self, ui_root_tk: Frame) -> Frame:
         self.ui_root_tk = ui_root_tk
+        self.frame = Frame(ui_root_tk)
 
-        self.vocal_ranges_labelframe = LabelFrame(self.ui_root_tk, text='Vocal ranges')
+        self.vocal_ranges_labelframe = LabelFrame(self.frame, text='Vocal ranges')
         self.vocal_ranges_labelframe.grid(row=0, column=0, rowspan=2)
 
         self.calibration_labelframe = LabelFrame(self.vocal_ranges_labelframe, text='Calibration')
@@ -123,12 +125,12 @@ class VoiceTraining(MicListener, PilotableInstrument):
         self.castrato_radio.grid(row=3, column=0)
         self.vocal_range.set('Vocal ranges')
 
-        self.progress_bar_labelframe = LabelFrame(self.ui_root_tk, text='Microphone')
+        self.progress_bar_labelframe = LabelFrame(self.frame, text='Microphone')
         self.progress_bar_labelframe.grid(row=2, column=0)
         self.progress_bar = Progressbar(self.progress_bar_labelframe, orient='horizontal', mode='indeterminate',
                                         length=280)
         self.progress_bar.grid(row=1, column=0, columnspan=9)
-        self.notes_labelframe = LabelFrame(self.ui_root_tk, text='Notes')
+        self.notes_labelframe = LabelFrame(self.frame, text='Notes')
         self.notes_labelframe.grid(row=3, column=0)
         for octave in range(0, len(self.mic_analyzer.OCTAVE_BANDS)):
             self.notes_buttons[str(octave)] = {}
@@ -141,6 +143,7 @@ class VoiceTraining(MicListener, PilotableInstrument):
                                                                width=10,
                                                                command=partial(self.do_play_note, note, octave))
                 self.notes_buttons[str(octave)][note].grid(row=1 + half_tone, column=octave, padx=5)
+        return self.frame
 
     def _do_change_vocal_range(self):
         selected_range = self.vocal_range.get()
@@ -353,5 +356,5 @@ if __name__ == "__main__":
     root = tkinter.Tk()
     root.title('Harmony tools')
     root.geometry('800x600')
-    nt.display(root)
+    frame = nt.get_ui_frame(root)
     root.mainloop()

@@ -26,6 +26,7 @@ class GuitarTraining(MicListener, PilotableInstrument):
     }
 
     def __init__(self, instrument_listener: InstrumentListener):
+        self.frame = None
         self.instrument_listener = instrument_listener
         super().__init__()
         self.highest_note = Note("A#5")
@@ -69,15 +70,17 @@ class GuitarTraining(MicListener, PilotableInstrument):
         self.current_note = None
         self.previous_note = None
 
-    def display(self, ui_root_tk: Frame):
+    def get_ui_frame(self, ui_root_tk: Frame) -> Frame:
         self.ui_root_tk = ui_root_tk
-        self.progress_bar = Progressbar(ui_root_tk, orient='horizontal', mode='indeterminate', length=280)
+        self.frame = Frame(ui_root_tk)
+        self.progress_bar = Progressbar(self.frame, orient='horizontal', mode='indeterminate', length=280)
         self.progress_bar.grid(row=1, column=0)
-        self.fretboard = Canvas(ui_root_tk, width=self.fretboard_width, height=self.fretboard_height,
+        self.fretboard = Canvas(self.frame, width=self.fretboard_width, height=self.fretboard_height,
                                 borderwidth=1, background='white')
         self.fretboard.grid(row=2, column=0)
         self._draw_fretboard()
         self._initialize_fingers()
+        return self.frame
 
     def __test_note_display(self):
         self._draw_finger_on_neck("D", the_string='E', the_fret=5)
@@ -306,5 +309,5 @@ if __name__ == "__main__":
     root = tkinter.Tk()
     root.title('Harmony tools')
     root.geometry('800x600')
-    nt.display(root)
+    frame = nt.get_ui_frame(root)
     root.mainloop()

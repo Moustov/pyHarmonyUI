@@ -8,6 +8,7 @@ from audio.capture_sound_fft import CaptureSoundFFT
 from audio.capture_sound_plot import capture_and_display_sound
 from file_capabilities.download_mp3_youtube import DownloadMP3Youtube
 from learning.learning_center import LearningCenter
+from note_recorder.note_recorder import NoteRecorder
 from ultimate_guitar.search_cadence import SearchSongFromCadence
 from ultimate_guitar.search_chords import SearchSongFromChords
 
@@ -19,6 +20,7 @@ from ultimate_guitar.search_chords import SearchSongFromChords
 class RootWindow(tkinter.Tk):
     def __init__(self):
         super().__init__()
+        self.note_recorder = None
         self.learning_center = None
         self.search_chords = None
         self.search_cadence = None
@@ -59,6 +61,8 @@ class RootWindow(tkinter.Tk):
         menu_audio.add_command(label="Live analysis", command=self.do_FFT_hearing)
         menu_audio.add_separator()
         menu_audio.add_command(label="Learning Center", command=self.do_learning_center)
+        menu_audio.add_separator()
+        menu_audio.add_command(label="Note recorder", command=self.do_record_notes)
         self.menu_bar.add_cascade(label="Audio", menu=menu_audio)
 
         menu_search = Menu(self.menu_bar, tearoff=0)
@@ -118,6 +122,12 @@ class RootWindow(tkinter.Tk):
         frame = self.search_cadence.get_ui_frame(self)
         frame.grid(row=1, column=0, columnspan=5, sticky='nsew', padx=5, pady=5)
 
+    def do_record_notes(self):
+        self.clear_root()
+        self.note_recorder = NoteRecorder()
+        frame = self.note_recorder.get_ui_frame(self)
+        frame.grid(row=1, column=0, columnspan=5, sticky='nsew', padx=5, pady=5)
+
     def clear_root(self):
         if self.record_youtube:
             self.record_youtube.frame.grid_remove()
@@ -127,6 +137,8 @@ class RootWindow(tkinter.Tk):
             self.search_chords.frame.grid_remove()
         if self.search_cadence:
             self.search_cadence.frame.grid_remove()
+        if self.note_recorder:
+            self.note_recorder.frame.grid_remove()
 
 
 

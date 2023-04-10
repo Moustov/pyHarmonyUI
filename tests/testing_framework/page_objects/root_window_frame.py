@@ -47,7 +47,18 @@ class RootWindowFrame:
         self.app.do_youtube_mp3_grabbing()
 
     def open_search_chords_frame(self):
+        """
+        open the chord searching frame
+        :return:
+        """
         self.app.do_search_chords()
 
     def open_search_cadence_frame(self):
+        """
+        open the cadence searching frame
+        :return:
+        """
         self.app.do_search_cadence()
+
+    def open_note_recorder_frame(self):
+        self.app.do_record_notes()
