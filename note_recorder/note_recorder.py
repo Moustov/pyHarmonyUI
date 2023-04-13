@@ -6,6 +6,7 @@ from tkinter.constants import *
 from tkinter.ttk import Combobox
 
 from moustovtkwidgets_lib.mtk_edit_table import mtkEditTable, mtkEditTableListener
+from pyharmonytools.harmony.note import Note
 
 from instrument.guitar_training import GuitarTraining
 from instrument.voice_training import VoiceTraining
@@ -15,7 +16,7 @@ from learning.instrument_listener import InstrumentListener
 class NoteRecorder(InstrumentListener, mtkEditTableListener):
     def __init__(self):
         self.instrument_frame = None
-        self.notes_treeview = None
+        self.notes_cells = None
         self.notes_labelframe = None
         self.selected_instrument = None
         self.frame = None
@@ -27,6 +28,9 @@ class NoteRecorder(InstrumentListener, mtkEditTableListener):
         self.instrument_labelframe = None
         self.frame = None
         self.ui_root_tk = None
+
+    def played_note(self, note: Note):
+        self.notes_cells.insert(parent="", index='end', text="", values=("chrono", str(Note), "duration"))
 
     def get_ui_frame(self, root: tkinter.Tk) -> Frame:
         self.frame = Frame(root)
@@ -58,14 +62,14 @@ class NoteRecorder(InstrumentListener, mtkEditTableListener):
         self.notes_labelframe.grid(row=2, column=1)
         col_ids = ('chrono', 'Note', 'Duration')
         col_titles = ('chrono', 'Note', 'Duration')
-        self.notes_treeview = mtkEditTable(self.notes_labelframe, columns=col_ids, column_titles=col_titles)
-        self.notes_treeview.add_listener(self)
-        self.notes_treeview.debug = True
-        self.notes_treeview.column('chrono', anchor=CENTER, width=60, stretch=NO)
-        self.notes_treeview.column('Note', anchor=W, width=200, minwidth=100)
-        self.notes_treeview.column('Duration', anchor=CENTER, width=0, stretch=YES)
-        self.notes_treeview.grid(row=0, column=0, columnspan=2, ipadx=200, padx=5, pady=5)
-        self.notes_treeview.column("#0", width=70, stretch=NO)
+        self.notes_cells = mtkEditTable(self.notes_labelframe, columns=col_ids, column_titles=col_titles)
+        self.notes_cells.add_listener(self)
+        self.notes_cells.debug = True
+        self.notes_cells.column('chrono', anchor=CENTER, width=60, stretch=NO)
+        self.notes_cells.column('Note', anchor=W, width=200, minwidth=100)
+        self.notes_cells.column('Duration', anchor=CENTER, width=0, stretch=YES)
+        self.notes_cells.grid(row=0, column=0, columnspan=2, ipadx=200, padx=5, pady=5)
+        self.notes_cells.column("#0", width=70, stretch=NO)
         return self.frame
 
     def do_save_score(self):
@@ -75,11 +79,11 @@ class NoteRecorder(InstrumentListener, mtkEditTableListener):
             if previous_note != note[0]:
                 score.append(note[0])
                 previous_note = note[0]
-        score_file_name = "learning modules/songs/" + str(datetime.now()).replace(":", "-")
+        score_file_name = str(datetime.now()).replace(":", "-")
         # todo take rests & durations into account
         file_content = {"name": score_file_name, "description": "recorded notes", "play_notes": "-".join(score),
                         "next possible": ""}
-        with open(score_file_name + ".json", "w", encoding='utf-8') as file:
+        with open("learning modules/songs/" + score_file_name + ".json", "w", encoding='utf-8') as file:
             json.dump(file_content, file, indent=4, ensure_ascii=False)
         print(f"Saved to {score_file_name}")
 
