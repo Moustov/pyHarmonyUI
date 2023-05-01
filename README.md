@@ -46,7 +46,9 @@ Based on [PyHarmonyToolings](https://github.com/Moustov/pyharmonytooling)
   * Lectures in 🇫🇷: https://www.youtube.com/@gradusadparnassumfr
     * Cours d'harmonie (chapitre I): https://www.youtube.com/watch?v=kYbmplpgls8&list=PLyIR6Ix26WY9lELxy0dpDOpjfmYLTGsHA
     * Cours d'harmonie (chapitre II): https://www.youtube.com/watch?v=aoe-5-JCadA&list=PLyIR6Ix26WY9ww90jZ7z9OnE1RxbUWr4x
-  * Guide to Chord Symbols: https://www.musicnotes.com/now/tips/a-complete-guide-to-chord-symbols-in-music/
+  * Guide to Chord Symbols: 
+    * https://www.musicnotes.com/now/tips/a-complete-guide-to-chord-symbols-in-music/
+    * https://www.pianochord.org/
   * few tools: https://muted.io/
   * https://getsongkey.com/song/fool-to-cry/DQAGB
 * Circle of Fifths: 

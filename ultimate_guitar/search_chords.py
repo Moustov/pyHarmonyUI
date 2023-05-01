@@ -9,6 +9,8 @@ from pyharmonytools.song.ultimate_guitar_song import UltimateGuitarSong
 
 class SearchSongFromChords(tkinter.Tk):
     def __init__(self):
+        self.song_limit_entry = None
+        self.song_limit_label = None
         self.list_of_songs = None
         self.song = None
         self.pattern = None
@@ -20,10 +22,16 @@ class SearchSongFromChords(tkinter.Tk):
 
     def get_ui_frame(self, root: tkinter.Tk) -> Frame:
         self.frame = Frame(root)
-        self.pattern_label = Label(self.frame, text="Chord pattern to search")
+        self.pattern_label = Label(self.frame, text="Chord pattern to search (' ' as separator)")
         self.pattern_label.pack()
         self.pattern = Entry(self.frame)
         self.pattern.pack()
+
+        self.song_limit_label = Label(self.frame, text="Number of songs to find")
+        self.song_limit_label.pack()
+        self.song_limit_entry = Entry(self.frame)
+        self.song_limit_entry.insert(0, "20")
+        self.song_limit_entry.pack()
 
         self.progress_bar = Progressbar(self.frame, orient='horizontal', mode='indeterminate', length=280)
         self.progress_bar.pack()
@@ -56,7 +64,8 @@ class SearchSongFromChords(tkinter.Tk):
     def _download_songs(self):
         self.progress_bar.start()
         query = self.pattern.get()
-        songs = self.ug_engine.search(query, 20)
+        nb_songs = int(self.song_limit_entry.get())
+        songs = self.ug_engine.search(query, nb_songs)
         song = UltimateGuitarSong()
         index = 0
         for s in songs:
